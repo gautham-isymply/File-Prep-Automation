@@ -1,0 +1,11 @@
+jobs:
+  - profile: sgp
+    input: /your/input/sgp.xlsx
+    output: /your/output/sgp_prepared.xlsx
+  - profile: gbr
+    input: /your/input/gbr.xlsx
+    output: /your/output/gbr_prepared.xlsx
+  - profile: reno
+    input: /your/input/reno.xlsx
+    week_ending: '2026-03-07'
+    output: /your/output/reno_prepared.xlsx

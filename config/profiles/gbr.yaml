@@ -1,0 +1,33 @@
+id: gbr
+description: GBR WorkSegments - normalize DMY dates and convert Excel time fractions to hours
+processor: tabular
+columns:
+  required: [DATEIN, DATEOUT, REGHOURS, O1HOURS, O2HOURS]
+  aliases:
+    DATEIN: [Date In]
+    DATEOUT: [Date Out]
+    REGHOURS: [Regular Hours]
+    O1HOURS: [OT1 Hours]
+    O2HOURS: [OT2 Hours]
+  negative_forbidden: [REGHOURS, O1HOURS, O2HOURS]
+dates:
+  - {column: DATEIN, input: DMY, excel_format: yyyymmdd}
+  - {column: DATEOUT, input: DMY, excel_format: yyyymmdd}
+time_to_hours: [REGHOURS, O1HOURS, O2HOURS]
+reconciliation:
+  - name: paid_hours_filtered
+    column: REGHOURS
+    filters:
+      - {column: DEPARTMENT, in: ['1000','1025','1050','1075','1300','1320','1330','1340','1350']}
+      - {column: JOBCODEDESC, not_in: [PTO, PARENTAL LEAVE, UNPAID TIME]}
+  - name: ot1_hours_filtered
+    column: O1HOURS
+    filters:
+      - {column: DEPARTMENT, in: ['1000','1025','1050','1075','1300','1320','1330','1340','1350']}
+      - {column: JOBCODEDESC, not_in: [PTO, PARENTAL LEAVE, UNPAID TIME]}
+  - name: ot2_hours_filtered
+    column: O2HOURS
+    filters:
+      - {column: DEPARTMENT, in: ['1000','1025','1050','1075','1300','1320','1330','1340','1350']}
+      - {column: JOBCODEDESC, not_in: [PTO, PARENTAL LEAVE, UNPAID TIME]}
+output: {format: xlsx, sheet: GBR}

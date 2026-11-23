@@ -1,0 +1,51 @@
+{
+  "profile": "sgp",
+  "input_path": "examples/SYNTHETIC_SGP_SOURCE.xlsx",
+  "output_path": "examples/SYNTHETIC_SGP_PREPARED.xlsx",
+  "issues": [
+    {
+      "severity": "INFO",
+      "code": "DROPPED_COLUMN",
+      "message": "Removed SCHEDULED END TIME per source procedure",
+      "row": null,
+      "column": "SCHEDULED END TIME",
+      "source": "examples/SYNTHETIC_SGP_SOURCE.xlsx"
+    },
+    {
+      "severity": "INFO",
+      "code": "DROPPED_COLUMN",
+      "message": "Removed SCHEDULED START TIME per source procedure",
+      "row": null,
+      "column": "SCHEDULED START TIME",
+      "source": "examples/SYNTHETIC_SGP_SOURCE.xlsx"
+    }
+  ],
+  "diagnostics": {
+    "filtered_reconciliation_metrics": {
+      "paid_hours_selected_dayforceuc1": {
+        "total": 15.5,
+        "rows": 2
+      },
+      "ot_hours_selected_dayforceuc1": {
+        "total": 1.5,
+        "rows": 2
+      }
+    },
+    "excluded_rows": 0
+  },
+  "source_sheet": "Incoming SGP",
+  "rows_in": 2,
+  "rows_out": 2,
+  "columns_out": [
+    "DAYFORCEUC1",
+    "DATE",
+    "NORM",
+    "OT"
+  ],
+  "status": "PREPARED",
+  "summary": {
+    "errors": 0,
+    "warnings": 0,
+    "info": 2
+  }
+}

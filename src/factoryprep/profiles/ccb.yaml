@@ -1,0 +1,29 @@
+id: ccb
+description: CCB hours - numeric Reg/OT/Total, remove Notes, flag the specific documented adjustment
+processor: tabular
+skip_summary_rows: true
+columns:
+  required: [Row Labels, Dept, Sum of Reg Hr, Sum of OT1.5 Hr, Sum of OT2 Hr, Sum of Total Hr]
+  aliases:
+    Row Labels: [Date, Row Label]
+    Dept: [CC, Department]
+    Sum of Reg Hr: [Sum of Reg Hrs, Reg Hr]
+    Sum of OT1.5 Hr: [Sum of OT1.5 Hrs, OT1.5 Hr]
+    Sum of OT2 Hr: [Sum of OT2 Hrs, OT2 Hr]
+    Sum of Total Hr: [Sum of Total Hrs, Total Hr]
+  drop: [Notes]
+  numeric: [Sum of Reg Hr, Sum of OT1.5 Hr, Sum of OT2 Hr, Sum of Total Hr]
+  negative_forbidden: [Sum of Reg Hr, Sum of OT1.5 Hr, Sum of OT2 Hr, Sum of Total Hr]
+dates:
+  - {column: Row Labels, input: MDY, excel_format: mm/dd/yy}
+manual_review:
+  - column: Sum of Reg Hr
+    equals: 65.8
+    message: 'Manual example changes one particular 65.8 to 75.8; do NOT change all occurrences. Use a row-keyed overrides file if confirmed.'
+cross_field_sums:
+  - {parts: [Sum of Reg Hr, Sum of OT1.5 Hr, Sum of OT2 Hr], total: Sum of Total Hr, tolerance: 0.02}
+reconciliation:
+  - name: ccb_selected_cost_centers_reg
+    column: Sum of Reg Hr
+    filters: [{column: Dept, in: ['3600161001','3600161002','3600161003','3600161004','3600161005','3600171000','3600171003','3600171004','3600171005']}]
+output: {format: xlsx, sheet: CCB}

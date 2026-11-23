@@ -1,0 +1,23 @@
+id: jz
+description: JZ-BUS/DAT - five profit centers from normalized group, paid and overtime columns
+processor: jz
+source_schema_status: provisional
+columns:
+  required: [Category, Paid Hours, OT Hours]
+  aliases:
+    Category: [Source Category, Source group]
+    Paid Hours: [Paid_Hours]
+    OT Hours: [OT_Hours]
+  numeric: [Paid Hours, OT Hours]
+  negative_forbidden: [Paid Hours, OT Hours]
+category_mapping:
+  'Direct Hours (Starline)': {segment: BUS, plant: '3618', plant_name: 'Santa Teresa', profit_center: BUSWAY, company_code: '3600'}
+  'Direct Hours (Cables)': {segment: DAT, plant: '3614', plant_name: 'Santa Teresa', profit_center: COP, company_code: '3600'}
+  'Direct Hours (Fibra)': {segment: DAT, plant: '3614', plant_name: 'Santa Teresa', profit_center: FIB, company_code: '3600'}
+  'Direct Hours (Connectors)': {segment: DAT, plant: '3614', plant_name: 'Santa Teresa', profit_center: RAC, company_code: '3600'}
+  'Direct Hours (Servertech)': {segment: DAT, plant: '3614', plant_name: 'Santa Teresa', profit_center: DAT, company_code: '3600'}
+output:
+  format: xlsx
+  sheet: JZ
+  date_format: m/d/yyyy
+  columns: [Segment, Plant, Plant name, Profitcent, Companycode, Date, Paid Hours, OT Hours]

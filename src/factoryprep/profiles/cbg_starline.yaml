@@ -1,0 +1,23 @@
+id: cbg_starline
+description: CBG Starline SSI - clean preamble/trailers, W/E date, Shift removal, numeric BRD
+processor: tabular
+skip_summary_rows: true
+header_scan_rows: 45
+columns:
+  required: [W/E Date, BRD]
+  aliases:
+    W/E Date: [WE Date, W E Date, Week Ending Date]
+    BRD: [B R D]
+  drop: [Shift]
+  numeric: [BRD]
+  negative_forbidden: [BRD]
+dates:
+  - {column: W/E Date, input: MDY, excel_format: m/d/yyyy, split_delimiter: ';' }
+reconciliation:
+  - name: starline_straight_hours_filtered
+    column: Straight Hrs
+    filters: [{column: CHARGECODE, in: ['1000','1025','1050','1075','1300','1330']}]
+  - name: starline_overtime_hours_filtered
+    column: Overtime Hrs
+    filters: [{column: CHARGECODE, in: ['1000','1025','1050','1075','1300','1330']}]
+output: {format: xlsx, sheet: 'Starline SSI'}

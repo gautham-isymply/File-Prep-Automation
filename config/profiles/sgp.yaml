@@ -1,0 +1,25 @@
+id: sgp
+description: SGP attendance - YYYYMMDD dates and remove scheduled time columns
+processor: tabular
+header_scan_rows: 25
+columns:
+  required: [DATE, NORM, OT]
+  aliases:
+    DATE: [Date, Work Date]
+    NORM: [Normal, Norm Hours]
+    OT: [Overtime]
+  drop: [SCHEDULED START TIME, SCHEDULED END TIME]
+  numeric: [NORM, OT]
+  negative_forbidden: [NORM, OT]
+dates:
+  - {column: DATE, input: YMD, excel_format: yyyymmdd}
+reconciliation:
+  - name: paid_hours_selected_dayforceuc1
+    column: NORM
+    filters:
+      - {column: DAYFORCEUC1, in: ['1000','1025','1050','1075','1300','1320','1330','1340','1350']}
+  - name: ot_hours_selected_dayforceuc1
+    column: OT
+    filters:
+      - {column: DAYFORCEUC1, in: ['1000','1025','1050','1075','1300','1320','1330','1340','1350']}
+output: {format: xlsx, sheet: SGP}

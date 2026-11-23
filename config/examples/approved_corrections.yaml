@@ -1,0 +1,11 @@
+# Fill in the real date and business keys from the actual source before using.
+# This example intentionally does NOT match any real CCB row.
+corrections:
+  - profile: ccb
+    match:
+      Row Labels: '2026-01-05'
+      Plant: '3617'
+      Dept: '3600171000'
+    column: Sum of Reg Hr
+    expected_old: 65.8
+    new_value: 75.8
