@@ -27,7 +27,7 @@ def load_profile(name: str, config_dir: Path | None = None) -> dict[str, Any]:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or data.get("id") != name:
         raise ConfigError(f"{path}: profile must be a mapping with id: {name}")
-    if data.get("processor", "tabular") not in {"tabular", "reno", "jz"}:
+    if data.get("processor", "tabular") not in {"tabular", "jz"}:
         raise ConfigError(f"{path}: unknown processor '{data.get('processor')}'")
     if data.get("output", {}).get("format", "xlsx") not in {"xlsx", "csv"}:
         raise ConfigError(f"{path}: output format must be xlsx or csv")

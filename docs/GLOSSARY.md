@@ -1,7 +1,7 @@
 # Glossary and exact search terms
 
 - **Profile:** YAML under `config/profiles/<id>.yaml` describing one input format; deployed copy under `src/factoryprep/profiles/`.
-- **Processor:** Python algorithm chosen by `processor`: `tabular`, `reno`, or `jz`.
+- **Processor:** Python algorithm chosen by `processor`: `tabular` or `jz`.
 - **Source:** unmodified workbook/CSV supplied to CLI.
 - **Prepared candidate:** `.xlsx` or `.csv` generated only after passing the configured gate; **not proof of BW ingestion**.
 - **Reconciliation:** advisory source totals computed using documented validation filters; no live BW comparison.

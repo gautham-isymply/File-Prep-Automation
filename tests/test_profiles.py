@@ -20,8 +20,8 @@ def output_rows(path):
 
 def test_inventory():
     assert set(available_profiles()) == {
-        'sgp','gbr','cbg_core','cbg_starline','ccb','reno','jz',
-        'dayforce_ccb','dayforce_non_ccb','taiwan'
+        'sgp','gbr','cbg_core','cbg_starline','ccb','jz',
+        'dayforce_ccb','dayforce_non_ccb'
     }
 
 
@@ -86,21 +86,6 @@ def test_ccb_manual_fix_is_not_automatic(workbook_factory,tmp_path):
     assert not (tmp_path/'strict.xlsx').exists()
 
 
-def test_reno_timecards_generate_seven_calendar_days(workbook_factory,tmp_path):
-    header = ['Name', date(2026,3,1), date(2026,3,2), date(2026,3,3), date(2026,3,4),
-              date(2026,3,5), date(2026,3,6), date(2026,3,7)]
-    src = workbook_factory('reno',header,[['Person A',0,9,9,0,0,0,0],
-                                            ['Person B',0,16,0,0,0,0,0]])
-    target = tmp_path/'reno_out.xlsx'
-    report = run('reno',src,target,week_ending=date(2026,3,7))
-    assert report.status == 'PREPARED', report.as_dict()
-    assert report.rows_out == 7
-    rows = output_rows(target)
-    assert rows[2][6] == 25
-    assert rows[2][7] == 0
-    assert sum(r[6] for r in rows[1:]) == 34
-
-
 def test_jz_maps_five_category_rows(workbook_factory,tmp_path):
     categories = ['Starline','Cables','Fibra','Connectors','Servertech']
     src = workbook_factory('jz',['Category','Paid Hours','OT Hours'],
@@ -139,17 +124,6 @@ def test_dayforce_non_ccb_keeps_all_rows_and_filters_metrics_only(workbook_facto
     assert r.status == 'PREPARED', r.as_dict()
     assert r.rows_out == 2
     assert r.diagnostics['filtered_reconciliation_metrics']['us_non_ccb_reg_hours']['total'] == 5
-
-
-def test_taiwan_checks_missing_days_nulls_negatives(workbook_factory,tmp_path):
-    src=workbook_factory('taiwan',['Date','Earn_Hours','Paid_Hours','Overtime_Hours'],
-        [['03/01/2026',9,10,0],['03/03/2026',None,-1,0]])
-    result=run('taiwan',src,tmp_path/'taiwan_clean.csv')
-    assert result.status == 'FAILED'
-    codes={i.code for i in result.issues}
-    assert {'MISSING_DATES','NEGATIVE_VALUE','NULL_VALUE'} <= codes
-    assert not (tmp_path/'taiwan_clean.csv').exists()
-    assert (tmp_path/'taiwan_clean_quality.json').exists()
 
 
 def test_fuzzy_header_and_reference_mismatch_block(workbook_factory,tmp_path):

@@ -6,7 +6,7 @@
 
 ## Context
 
-Manual introduction says each week starts Sunday and ends Saturday; some later SQL examples show inconsistent dates. Reno and JZ weekly templates use Sunday start.
+Manual introduction says each week starts Sunday and ends Saturday; some later SQL examples show inconsistent dates. The JZ weekly template uses Sunday start.
 
 ## Decision
 
@@ -17,3 +17,5 @@ Adopt Saturday `--week-ending`, derive Sunday = ending minus six days. Mark cont
 Business signoff still required across workflows (TD-010). Never modify source week dates to force example SQL compatibility.
 
 See [design](../DESIGN.md), [debt](../exec-plans/tech-debt-tracker.md) and [current state](../progress/CURRENT_STATE.md).
+
+2026-11-24: retired workflow details removed at user request; see [ADR-0006](ADR-0006-supported-scope.md). Remaining decision semantics are retained.

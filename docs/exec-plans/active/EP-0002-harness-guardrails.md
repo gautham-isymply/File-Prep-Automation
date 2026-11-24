@@ -1,7 +1,7 @@
 # EP-0002 — enforce documentation and configuration guardrails
 
 **State:** active  
-**Updated:** 2026-11-23  
+**Updated:** 2026-11-24
 **Linked debt:** TD-002, TD-006, TD-011  
 **Owner:** unassigned
 
@@ -11,7 +11,7 @@ Agents can navigate the repo from a short entry file and automatically detect br
 
 ## Baseline and scope
 
-v0.1.0 10 profiles / 19 tests. No formal docs linter or dependency boundary enforcement in original CLI. This plan adds a lightweight stdlib documentation check; it does not change business file-preparation behavior.
+The original v0.1.0 baseline had 10 profiles / 19 tests; current scope has eight profiles / 17 tests (EP-0003). No formal docs linter or dependency boundary enforcement in original CLI. This plan adds a lightweight stdlib documentation check; it does not change business file-preparation behavior.
 
 ## Current repository facts
 
@@ -35,7 +35,7 @@ Keep checker in `scripts/check_docs.py` with zero extra runtime dependencies; ex
 
 ## Verification and acceptance
 
-`uv run python scripts/check_docs.py` returns exit 0 and reports ten profile/runbook matches, no broken Markdown links and no YAML-copy drift. `uv run pytest -q` remains green. Later milestones require new tests proving bad YAML/import edges fail with clear diagnostics.
+`uv run python scripts/check_docs.py` returns exit 0 and reports eight profile/runbook matches, no broken Markdown links and no YAML-copy drift. `uv run pytest -q` remains green. Later milestones require new tests proving bad YAML/import edges fail with clear diagnostics.
 
 ## Evidence / execution log
 

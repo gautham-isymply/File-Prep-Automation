@@ -19,8 +19,6 @@
 | `io.read_book` | path → `SourceBook` | xlsx/xlsm `data_only=True`, CSV delimiter sniff; not `.xls` |
 | `tabular.select_tabular_sheet` | sheets + Context → `(sheet, header_index)` | best required-header score; tie requires explicit sheet |
 | `tabular.prepare_tabular` | sheet + header + Context + report → `Prepared` | aliases, data checks, exclusion, transformations, advisory metrics |
-| `reno.choose_reno_sheet` | sheets + Context → sheet/header/date columns | finds 7 dates in first 15 rows |
-| `reno.prepare_reno` | sheet/header/dates + Context → `Prepared` | 7 daily sums and 0 OT template |
 | `jz.prepare_jz` | sheet/header + Context → `Prepared` | requires normalized category/paid/OT input and Saturday |
 | `engine.run` | run args → `RunReport` | dispatch, quality gate, reference headers, atomic candidate output, JSON report |
 | `cli.app` | Typer commands | exit 2 on validation failure |

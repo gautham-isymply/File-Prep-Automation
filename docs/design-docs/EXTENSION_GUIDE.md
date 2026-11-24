@@ -11,8 +11,8 @@
 
 ## For a structurally different source
 
-Implement a processor in `src/factoryprep/pipelines/` with `Prepared` + `RunReport` as its contract, add a controlled dispatch in `engine.py`, document an ADR if introducing a new architectural boundary. Reuse `transform.py` parsers and `io.py` readers; do not duplicate report status semantics. Reno and JZ are examples.
+Implement a processor in `src/factoryprep/pipelines/` with `Prepared` + `RunReport` as its contract, add a controlled dispatch in `engine.py`, document an ADR if introducing a new architectural boundary. Reuse `transform.py` parsers and `io.py` readers; do not duplicate report status semantics. JZ is an example.
 
 ## Production acceptance (not currently completed)
 
-A workflow is *certified* only after real (redacted) source sample, exact destination schema, output totals, source-to-output row counts, manual-vs-CLI comparison, negative cases and required business signoff are linked in its process runbook. Mere 19-test functional pass does not imply this certification.
+A workflow is *certified* only after real (redacted) source sample, exact destination schema, output totals, source-to-output row counts, manual-vs-CLI comparison, negative cases and required business signoff are linked in its process runbook. A synthetic functional test pass does not imply this certification.

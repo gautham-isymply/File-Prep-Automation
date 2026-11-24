@@ -11,7 +11,6 @@ from .detect import detect_profile
 from .io import read_book, read_reference_columns, write_prepared
 from .models import Context, Prepared, RunReport
 from .pipelines.jz import prepare_jz
-from .pipelines.reno import choose_reno_sheet, prepare_reno
 from .pipelines.tabular import prepare_tabular, select_tabular_sheet
 
 
@@ -44,17 +43,11 @@ def run(profile: str, source: Path, output: Path | None = None,
             result.add("WARNING", "EXTERNAL_REFRESH_NOT_PERFORMED",
                        "Excel linked/Power Query data is NOT refreshed by this program; "
                        "supply an already refreshed export")
-        if spec.get("processor") == "reno":
-            selected, index, dates = choose_reno_sheet(book.sheets, ctx)
-            result.source_sheet = selected.name
-            result.rows_in = max(0, len(selected.rows) - index - 1)
-            prepared = prepare_reno(selected, index, dates, ctx, result)
-        else:
-            selected, index = select_tabular_sheet(book.sheets, ctx, result)
-            result.source_sheet = selected.name
-            result.rows_in = max(0, len(selected.rows) - index - 1)
-            processor = prepare_jz if spec.get("processor") == "jz" else prepare_tabular
-            prepared = processor(selected, index, ctx, result)
+        selected, index = select_tabular_sheet(book.sheets, ctx, result)
+        result.source_sheet = selected.name
+        result.rows_in = max(0, len(selected.rows) - index - 1)
+        processor = prepare_jz if spec.get("processor") == "jz" else prepare_tabular
+        prepared = processor(selected, index, ctx, result)
         result.rows_out = len(prepared.rows)
         result.columns_out = prepared.columns
         result.diagnostics = prepared.diagnostics
