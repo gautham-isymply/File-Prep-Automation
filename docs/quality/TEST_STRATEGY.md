@@ -13,7 +13,7 @@ uv run ruff check src tests
 
 ## Layers of assurance
 
-1. *Unit/functional synthetic*: header detection, date fraction handling, number parsing, exclusions, corrupt cells, override safety, destination headers. See the current test count and command evidence in [current state](../progress/CURRENT_STATE.md).
+1. *Unit/functional synthetic*: header detection, date fraction handling, number parsing, exclusions, corrupt cells, override safety, destination headers. Existing `tests/test_profiles.py` has 19 `test_*` functions.
 2. *Integrity*: `scripts/check_docs.py` verifies Markdown local links, 10 profile docs and mirrored YAML equality.
 3. *Golden real-world sanitized fixtures* (**not yet done**): each profile's approved raw layout, expected output schema/types/totals, manual parity and negative cases.
 4. *Operational signoff* (**not yet done**): business approval of numeric precision, time unit semantics, date/week semantics, file naming and retention policy; no BW tests in scope.

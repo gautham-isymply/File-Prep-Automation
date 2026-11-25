@@ -16,6 +16,7 @@ uv run factoryprep detect --input SOURCE.xlsx
 ```bash
 uv run factoryprep validate --profile sgp --input SOURCE.xlsx --strict
 uv run factoryprep prepare --profile sgp --input SOURCE.xlsx --output SGP_prepared.xlsx   --reference APPROVED_SINGLE_SHEET_HEADER.xlsx --report SGP_quality.json
+uv run factoryprep prepare --profile reno --input TIMECARDS.xlsx --week-ending 2026-03-07
 uv run factoryprep prepare --profile jz --input NORMALIZED_JZ.xlsx --week-ending 2026-02-28
 uv run factoryprep batch --manifest config/examples/batch.yaml
 ```

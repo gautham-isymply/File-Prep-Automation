@@ -9,8 +9,10 @@
 | `cbg_core` | CBG Starline Core2 | tabular | 12–13 | [CBG Core](cbg_core.md) |
 | `cbg_starline` | CBG Starline SSI | tabular | 13–19 | [CBG SSI](cbg_starline.md) |
 | `ccb` | CCB summary | tabular | 20–26 | [CCB](ccb.md) |
+| `reno` | Reno Temp Timecards | reno | 26–28 | [Reno](reno.md) |
 | `jz` | JZ-BUS and JZ-DAT | jz (staged) | 29–31 | [JZ combined](jz.md); [BUS](jz_bus.md); [DAT](jz_dat.md) |
 | `dayforce_ccb` | Dayforce CCB | tabular | 32–35 | [Dayforce CCB](dayforce_ccb.md) |
 | `dayforce_non_ccb` | Dayforce non-CCB | tabular | 32–35 | [Dayforce non-CCB](dayforce_non_ccb.md) |
+| `taiwan` | Taiwan | tabular | 36–39 | [Taiwan](taiwan.md) |
 
-**Date convention:** Sunday start → Saturday end per manual introduction. SQL example discrepancies are documented in [evidence map](../references/MANUAL_EVIDENCE.md). No BW execution. Run a profile with `uv run factoryprep prepare --profile <id> --input SOURCE.xlsx`. JZ requires `--week-ending` and normalized staging source.
+**Date convention:** Sunday start → Saturday end per manual introduction. SQL example discrepancies are documented in [evidence map](../references/MANUAL_EVIDENCE.md). No BW execution. Run a profile with `uv run factoryprep prepare --profile <id> --input SOURCE.xlsx`; use `.csv` output for Taiwan. JZ requires `--week-ending` and normalized staging source.

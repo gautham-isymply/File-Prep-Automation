@@ -1,6 +1,6 @@
 # Architecture — FactoryPrep v0.1.0
 
-**Status:** inspected against source as of 2026-11-24; current verification recorded in [the execution log](docs/progress/EXECUTION_LOG.md). **Scope:** source-file preparation, format validation, candidate output and JSON audit. BW integration is intentionally absent. Detailed behavior lives in [design docs](docs/design-docs/index.md).
+**Status:** inspected against source as of 2026-11-23; functional baseline verified by 19 local tests. **Scope:** source-file preparation, format validation, candidate output and JSON audit. BW integration is intentionally absent. Detailed behavior lives in [design docs](docs/design-docs/index.md).
 
 ## Dataflow and trust boundaries
 
@@ -14,7 +14,8 @@ read_book(): io.py -> SourceBook / RawSheet / CellValue
         |  [UNTRUSTED: files, headers, cell values]
         v
 engine.run() -> Context -> processor dispatch
-        |-- tabular: pipelines/tabular.py (7 profiles)
+        |-- tabular: pipelines/tabular.py (8 profiles)
+        |-- reno:    pipelines/reno.py (1 profile)
         `-- jz:      pipelines/jz.py (1 provisional profile)
         |  transform.py: parse dates, numeric/hours, label normalization
         v
@@ -36,6 +37,7 @@ Quality gate: ERROR blocks; --strict also blocks WARNING
 | `io.py` | Read xlsx/xlsm/csv/tsv, write xlsx/csv, reference headers | models, openpyxl |
 | `detect.py` | Conservative header + filename profile detection | config, io, transform |
 | `pipelines/tabular.py` | Header selection, row cleanup, validation, source metrics | models, transform |
+| `pipelines/reno.py` | Seven-day timecard aggregation | models, transform |
 | `pipelines/jz.py` | Five-category-to-profit-center transformation | models, transform, tabular |
 | `engine.py` | Orchestration, quality gate, report, output lifecycle | config, detect, io, models, pipelines |
 | `cli.py` | Typer commands, CLI exit codes and sequential batch | config, detect, engine |

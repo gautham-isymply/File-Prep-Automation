@@ -6,7 +6,7 @@
 
 | Key | Meaning / implementation |
 |---|---|
-| `id`, `description`, `processor` | required identity; `processor` ∈ `tabular`, `jz` |
+| `id`, `description`, `processor` | required identity; `processor` ∈ `tabular`, `reno`, `jz` |
 | `columns.required` | canonical exact semantic headers, alias-aware for input |
 | `columns.aliases` | canonical → equivalent labels; normalized by stripping punctuation/case |
 | `columns.drop` | columns removed from prepared output, if present |
@@ -21,8 +21,8 @@
 | `manual_review`, `cross_field_sums`, `date_continuity_column` | warning/anomaly checks |
 | `external_refresh` | warning when linked data must have been refreshed outside Python |
 | `source_schema_status: provisional` | risk warning for incomplete raw-source specification |
-| `output.format`, `output.sheet`, `output.columns`, `output.date_format` | output destination; explicit fixed columns are used by the `jz` processor |
-| `category_mapping` | processor-specific JZ fields |
+| `output.format`, `output.sheet`, `output.columns`, `output.date_format` | output destination; explicit fixed columns are used by `reno` and `jz` processors |
+| `defaults`, `category_mapping` | processor-specific Reno/JZ fields |
 
 **Caution:** This is an implementation description, **not** a published formal schema. Profile keys that are accepted by YAML but unused by a given processor will not automatically fail. No JSON Schema or Pydantic model currently enforces the entire contract ([TD-002](../exec-plans/tech-debt-tracker.md)).
 

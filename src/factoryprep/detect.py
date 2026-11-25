@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .config import available_profiles, load_profile
 from .io import read_book
-from .transform import norm
+from .transform import norm, parse_date
 
 
 class DetectionError(ValueError):
@@ -26,6 +26,10 @@ def detect_profile(path: Path, config_dir: Path | None = None,
     possible: list[tuple[str, int]] = []
     for name in available_profiles(config_dir):
         spec = load_profile(name, config_dir)
+        if spec.get("processor") == "reno":
+            if _has_weekly_dates(sheets):
+                possible.append((name, 7))
+            continue
         column_cfg = spec.get("columns", {})
         required = column_cfg.get("required", [])
         if not required:
@@ -53,3 +57,19 @@ def detect_profile(path: Path, config_dir: Path | None = None,
 def _possible_headers(sheet) -> list[set[str]]:
     return [{norm(c.value) for c in row if c.value is not None}
             for row in sheet.rows[:45]]
+
+
+def _has_weekly_dates(sheets) -> bool:
+    for sh in sheets:
+        for row in sh.rows[:15]:
+            found = set()
+            for cell in row:
+                try:
+                    date = parse_date(cell.value, "MDY")
+                    if 2020 <= date.year <= 2100:
+                        found.add(date)
+                except (TypeError, ValueError, OverflowError):
+                    pass
+            if len(found) >= 7:
+                return True
+    return False

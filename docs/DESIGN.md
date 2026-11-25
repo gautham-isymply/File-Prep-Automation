@@ -8,7 +8,7 @@ The CLI is a *preparation and quality gate*, not an integration service. It does
 
 - Readers/writers `io.py` support xlsx/xlsm/csv/tsv input and xlsx/csv output; formulas are loaded as cached values.
 - `detect.py` and `config.py` select/load the profile (no inferred JZ paid/OT mapping).
-- `engine.py` dispatches to `tabular` or `jz` and gates output based on `RunReport`.
+- `engine.py` dispatches to `tabular`, `reno`, or `jz` and gates output based on `RunReport`.
 - Profile rules control header aliases, drops, date display, numeric conversions, reconciliations, and narrow exclusions.
 - `--reference` optionally compares the output header to an externally approved target schema.
 

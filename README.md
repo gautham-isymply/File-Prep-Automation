@@ -23,12 +23,16 @@ uv run factoryprep prepare --profile auto --input /path/to/sgp.xlsx \
   --output /path/to/sgp_prepared.xlsx
 
 # Validate without creating an output file:
-uv run factoryprep validate --profile sgp --input /path/to/sgp.xlsx
+uv run factoryprep validate --profile taiwan --input /path/to/taiwan.csv
 
 # Validate exact target columns using a real single-sheet load template:
 uv run factoryprep prepare --profile ccb --input /path/to/ccb.xlsx \
   --reference /path/to/ccb_destination_template.xlsx \
   --output /path/to/ccb_prepared.xlsx
+
+# Weekly Reno timecard conversion:
+uv run factoryprep prepare --profile reno --input /path/to/reno.xlsx \
+  --week-ending 2026-03-07 --output /path/to/reno_prepared.xlsx
 
 # Process a declared set of files:
 uv run factoryprep batch --manifest config/examples/batch.yaml
@@ -48,9 +52,11 @@ For each run, a `*_quality.json` report is generated next to the expected output
 | `cbg_core` | CBG Starline Core2 | Skip preamble/total rows; `Pay Rate` numeric; sheet `Core` | 12–13 |
 | `cbg_starline` | CBG Starline SSI | `W/E Date` normalization; delete `Shift`; numeric `BRD` | 13–16 |
 | `ccb` | CCB hours workbook | Numeric Reg/OT/Total; delete `Notes`; flag manual 65.8 example | 20–22 |
+| `reno` | Reno (3601) weekly employee timecards | Sum each Sunday–Saturday day's hours; seven daily template rows | 26–27 |
 | `jz` | JZ-BUS / JZ-DAT category-level source | Five rows mapped to BUSWAY/COP/FIB/RAC/DAT and Sunday date | 29–30 |
 | `dayforce_ccb` | Dayforce CCB export | Remove `3600172100 > Receiving Farmingdale`; audit category totals | 32–35 |
 | `dayforce_non_ccb` | Dayforce non-CCB export | Validate fields and compute Reg / OT totals by location + cost center | 32–35 |
+| `taiwan` | Taiwan production-hours file | Date/series/null/negative checks and normalized CSV output | 36 |
 
 **Important distinction:** filters used in the manual to *validate totals after a load* (SGP departments, GBR departments and leave codes, CBG pay codes/charge codes, CCB CCs, Dayforce category/location filters) are **used for reconciliation metrics only**. They do **not** remove rows from the prepared source. Only documented pre-load exclusions remove rows (such as Dayforce Receiving Farmingdale).
 
@@ -68,7 +74,7 @@ factoryprep validate (same flags as prepare; never writes the prepared file)
 factoryprep batch --manifest jobs.yaml [--strict]
 ```
 
-Automatic profile selection (`--profile auto`) is conservative: it matches required headers and refuses ambiguous Dayforce variants unless the filename distinguishes them. Supply `--profile` explicitly whenever a workbook has multiple applicable source tabs. The output filename extension must match the profile (`.xlsx` for all bundled profiles). CSV uses UTF-8 with BOM for Excel compatibility. Source `xls` files must first be exported to `xlsx` because `openpyxl` does not read legacy `.xls`. Excel formulas, macros, OData/PowerQuery connections, and linked source refreshes are **never executed** by this CLI.
+Automatic profile selection (`--profile auto`) is conservative: it matches required headers and refuses ambiguous Dayforce variants unless the filename distinguishes them. Supply `--profile` explicitly whenever a workbook has multiple applicable source tabs. The output filename extension must match the profile (`.csv` for Taiwan, `.xlsx` for the other profiles). CSV uses UTF-8 with BOM for Excel compatibility. Source `xls` files must first be exported to `xlsx` because `openpyxl` does not read legacy `.xls`. Excel formulas, macros, OData/PowerQuery connections, and linked source refreshes are **never executed** by this CLI.
 
 ## Reports, issues, and governance
 
@@ -101,7 +107,7 @@ The override is rejected if zero/multiple rows match or the old value has change
 3. Define `reconciliation` filters to calculate quality-control totals, **not** to delete rows.
 4. Configure `output.format` and `output.sheet`; for a rigid target layout, supply a true template with `--reference` or configure `output.columns` for a specialized pipeline.
 5. Run `uv run pytest -q`, and add representative actual source-based fixtures (without confidential data) for the updated profile.
-6. For new source shapes, add a file to `src/factoryprep/pipelines/` and dispatch it from `engine.py`.
+6. For new shapes such as pivoted timecards, add a file to `src/factoryprep/pipelines/` and dispatch it from `engine.py`.
 
 Default profiles are embedded inside `src/factoryprep/profiles/` so installed/wheel-based use works. `config/profiles/` is the editable master copy in this project. **When editing a built-in profile, copy it to the embedded directory or use `--config-dir config/profiles`** to force the editable copy. For long-term use, maintain one repository-controlled canonical config directory and pass it in deployment.
 
@@ -114,11 +120,12 @@ Default profiles are embedded inside `src/factoryprep/profiles/` so installed/wh
 5. **Dayforce automatic refresh.** Opening the original files in Excel refreshes external data according to the manual. This program cannot trigger that refresh; feed it already-refreshed exports. Every Dayforce run reports this limitation.
 6. **Week calendar discrepancy.** The manual's introduction specifies **Sunday–Saturday**, while some later SQL examples use a Monday/Sunday range. The tool adopts the stated Sunday–Saturday convention; verify SAP validation windows separately (out of scope).
 7. **CBG ambiguous date instructions.** The Core2/SSI screenshots and text do not fully enumerate the original headers, and the SSI wizard's YMD selection conflicts with the shown US-style display. The profile uses MDY parsing and `m/d/yyyy` output, which must be validated with a genuine SSI workbook.
+8. **Taiwan destination.** Original example is CSV and prechecks describe *correct dates* without an explicit target date string format. Output uses CSV `MM/DD/YYYY`, configurable via the profile, pending actual destination specification.
 
 ## Safety boundaries
 
 - Never changes the source file; prepared output is written via a temporary file, then atomically renamed.
 - Reports exact header/format problems and fails before writing any new output when critical checks fail.
-- Does not manufacture missing source rows, dates, daily hours or overtime values beyond the declared profile mapping.
+- Does not manufacture missing source rows, dates, daily hours or overtime values unless the manual expressly instructs a template with zero OT (Reno).
 - Includes the requested weekly source preparation only; no BW stage deletion, DTPs, ADSOs, emails or PBI.
 - A failed run will not remove a previously generated output; the JSON report warns if an old output remains, so operators must use the report/status, not just file existence.

@@ -9,15 +9,17 @@
 | cbg_core | 2 | raw header/totals structure and target layout |
 | cbg_starline | 2 | MDY vs YMD mismatch (TD-009) |
 | ccb | 2 | approved correction key, Dept vs CC equivalence (TD-005) |
+| reno | 2 | timecard agency/row semantics, approved output template |
 | jz | 1 | normalized staging works in synthetic tests; raw HC extraction absent (TD-003) |
 | dayforce_ccb | 2 | refresh freshness and exact exclusions |
 | dayforce_non_ccb | 2 | refresh and fuzzy substring cost-center matching (TD-016) |
+| taiwan | 2 | exact CSV date/column contract (TD-008) |
 
 ## Layer scores
 
 | Layer | Level | Evidence / caveat |
 |---|---:|---|
-| Python CLI + processors | 2 | synthetic tests; see [current evidence](../progress/CURRENT_STATE.md); limited real-file evidence |
+| Python CLI + processors | 2 | 19 tests passed; limited real-file evidence |
 | Config/profile validation | 1 | shallow YAML structural checking only |
 | Docs and retrieval harness | 2 | link/coverage/mirror checker in repo; no CI integration |
 | Real business reconciliation | 0 | no verified business goldens or BW totals (outside scope) |

@@ -1,6 +1,6 @@
 # Technical debt tracker — persistent ledger
 
-**Updated:** 2026-11-24. Status values: `open`, `in-progress`, `blocked`, `closed`. Priority P0 (incorrect numbers/data risk), P1 (production blocker), P2 (maintainability), P3 (optional). `Owner: unassigned` is intentional; do not imply an assignment. All open items require evidence and a checkable closure condition.
+**Updated:** 2026-11-23. Status values: `open`, `in-progress`, `blocked`, `closed`. Priority P0 (incorrect numbers/data risk), P1 (production blocker), P2 (maintainability), P3 (optional). `Owner: unassigned` is intentional; do not imply an assignment. All open items require evidence and a checkable closure condition.
 
 | ID | Priority/status | Scope / evidence | Closure test |
 |---|---|---|---|
@@ -11,6 +11,7 @@
 | TD-005 | P1 blocked | CCB manual one-row 65.8→75.8 correction lacks stable unique source key. | Approved exact-row mapping and case-specific fixture; no global replacement. |
 | TD-006 | P2 open | Module dependency boundaries documented but not statically enforced. | Import/layer linter + negative regression test. |
 | TD-007 | P1 blocked | Dayforce refresh is external; program cannot prove workbook data freshness. | Approved freshness evidence/check in operational gate or certified export contract. |
+| TD-008 | P1 blocked | Taiwan date output format/complete schema not explicit in manual; current CSV assumptions. | Real target spec and byte/cell-level golden fixture comparison. |
 | TD-009 | P1 blocked | CBG SSI date wizard says YMD while screenshot shows US-style; configured MDY. | Representative raw SSI workbook with verified parsed weekly dates. |
 | TD-010 | P1 blocked | Sunday–Saturday stated overall, some SQL date examples differ. | Written business rule for all load windows and tests. |
 | TD-011 | P2 open | Only local docs checker; CI, full link/code symbol lint, drift checks not integrated into remote pipeline. | CI enforces tests/docs/schema checks; reproducible failure evidence. |
@@ -19,11 +20,10 @@
 | TD-014 | P2 open | `read_book` eagerly materializes workbook cells; memory/large-file performance not characterized. | Benchmarks on representative sizes and streaming plan or bound. |
 | TD-015 | P2 open | Duplicate detection is optional `columns.duplicate_keys` and no real business keys specified by source manual for input. | Approved per-source candidate keys + tests proving duplicates flagged before output. |
 | TD-016 | P1 open | Dayforce non-CCB cost-center validation `contains_any` matches substrings, not approved normalized codes; business label variation risk. | Business-approved code parser and fixture suite for exact/variant codes. |
-| TD-017 | P2 open | Owner: unassigned. Ruff 0.17.6 reports 66 findings in `src`/`tests` on 2026-11-24; comparison with original retained files yields the same findings and zero additions. See execution log. | Resolve existing findings or adopt reviewed lint configuration; `uv run ruff check src tests` exits 0 and tests remain green. |
 
 ## Active cross-references
 
-- [EP-0001 source certification](active/EP-0001-source-contract-certification.md): TD-001/003/004/005/007/009/010/016.
+- [EP-0001 source certification](active/EP-0001-source-contract-certification.md): TD-001/003/004/005/007/008/009/010/016.
 - [EP-0002 guardrails](active/EP-0002-harness-guardrails.md): TD-002/006/011.
 - Deferred/owner unassigned: TD-012/013/014/015. Create a focused ExecPlan before substantial work.
 

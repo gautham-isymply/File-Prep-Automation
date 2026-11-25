@@ -9,8 +9,10 @@
 | 12–13 | CBG Core2 data-only `Core` tab and numeric Pay Rate | [Core](../processes/cbg_core.md) |
 | 13–16 | CBG SSI header/trailer removal, W/E date processing, delete Shift, numeric BRD | [Starline](../processes/cbg_starline.md) |
 | 20–22 | CCB one highlighted 65.8→75.8 correction, four numeric hours columns, Notes removal | [CCB](../processes/ccb.md) |
+| 26–27 | Reno: sum employee daily timecards; seven dates Sunday–Saturday; template OT 0 | [Reno](../processes/reno.md) |
 | 29–30 | JZ: HC invoice-hours context, five Direct Hours category transfers, Sunday template date | [JZ](../processes/jz.md) |
 | 32–35 | Two Dayforce files; auto-refresh on Excel open; exclude CCB Receiving Farmingdale; source reconciliation filters | [Dayforce CCB](../processes/dayforce_ccb.md), [non-CCB](../processes/dayforce_non_ccb.md) |
+| 36–39 | Taiwan: dates, nulls, negatives, missing days; earned/paid/OT file; later SAP steps | [Taiwan](../processes/taiwan.md) |
 
 ## Ambiguities and misleading artifacts
 
@@ -20,6 +22,7 @@
 4. CCB correction is one highlighted cell; the manual does not give a unique stable row key for automated matching. **TD-005**.
 5. JZ raw HC column is mentioned but detailed machine-readable source layout and paid/OT decomposition are not shown. Current staged source is a CLI design assumption, **not** manual instruction. **TD-003**.
 6. Dayforce refresh in Excel happens outside the Python CLI; cannot assume fresh data. **TD-007**.
-7. All SAP DTP names, ADSO deletions/activations and post-load SQL checks belong to **BW processes outside scope**. They provide reconciliation context but are not calls implemented in Python.
+7. Taiwan example CSV is pictured but exact output date encoding and target columns/types are not given. **TD-008**.
+8. All SAP DTP names, ADSO deletions/activations and post-load SQL checks belong to **BW processes outside scope**. They provide reconciliation context but are not calls implemented in Python.
 
 The business owner must resolve ambiguities with real sanitized files and approved templates before operational certification. See [EP-0001](../exec-plans/active/EP-0001-source-contract-certification.md).

@@ -1,0 +1,14 @@
+id: reno
+description: Reno (3601) - sum weekly employee timecard rows into seven daily template records
+processor: reno
+defaults:
+  segment: PAC
+  plant: '3601'
+  plant_name: 'Reno, NV'
+  profit_center: PDU
+  company_code: '3600'
+output:
+  format: xlsx
+  sheet: Reno
+  date_format: yyyy-mm-dd
+  columns: [Segment, Plant, Plant name, Profitcent, Companycode, Date, Paid Hours, OT Hours]

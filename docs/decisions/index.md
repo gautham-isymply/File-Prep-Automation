@@ -9,4 +9,3 @@ A decision is not a work ticket. Keep historical accepted decisions immutable; a
 | [ADR-0003](ADR-0003-quality-gate.md) | Failed quality gate never replaces candidate; reviewed overrides only |
 | [ADR-0004](ADR-0004-week-boundary.md) | Sunday–Saturday convention with discrepancy noted |
 | [ADR-0005](ADR-0005-jz-provisional-source.md) | JZ staged input until raw HC contract verified |
-| [ADR-0006](ADR-0006-supported-scope.md) | Eight supported profiles; retired workflow details removed |

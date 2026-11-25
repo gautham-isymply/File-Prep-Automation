@@ -1,8 +1,8 @@
 # EP-0001 — certify real input and destination contracts
 
 **State:** active / blocked on real sanitized workbooks and destination templates  
-**Updated:** 2026-11-24
-**Linked debt:** TD-001, TD-003, TD-004, TD-005, TD-007, TD-009, TD-010
+**Updated:** 2026-11-23  
+**Linked debt:** TD-001, TD-003, TD-004, TD-005, TD-007, TD-008, TD-009, TD-010  
 **Owner:** unassigned
 
 ## Objective
@@ -11,7 +11,7 @@ An operator can run every workflow on a sanitized representative source and obta
 
 ## Baseline and scope
 
-Current scope: eight YAML profiles with `tabular`/`jz` pipelines; current test evidence is in `docs/progress/EXECUTION_LOG.md`. Code and sample inputs examined 2026-11-23. Source-derived process details: `docs/processes/` and `docs/references/MANUAL_EVIDENCE.md`.
+v0.1.0: 10 YAML profiles, `tabular`/`reno`/`jz` pipelines, 19 passing local tests (synthetic fixtures). Code and sample inputs examined 2026-11-23. Source-derived process details: `docs/processes/` and `docs/references/MANUAL_EVIDENCE.md`.
 
 ## Current repository facts
 
@@ -23,11 +23,11 @@ Current scope: eight YAML profiles with `tabular`/`jz` pipelines; current test e
 
 ## Unknowns and human decisions
 
-Need sanitized raw input (all eight profiles, including both CBG and Dayforce variants), approved final template per profile, sample exact paid/OT totals, GBR time units, JZ raw HC invoice/OT mapping, CCB row-key approval for the 65.8→75.8 example, week-date policy confirmation. Cannot manufacture these artifacts or business decisions.
+Need sanitized raw input (all ten profiles, including both CBG and Dayforce variants), approved final template per profile, sample exact paid/OT totals, GBR time units, JZ raw HC invoice/OT mapping, CCB row-key approval for the 65.8→75.8 example, Taiwan destination date/CSV conventions, week-date policy confirmation. Cannot manufacture these artifacts or business decisions.
 
 ## Milestones / Progress
 
-- [x] M0 — enumerate supported profiles and document unresolved manual ambiguities (2026-11-23).
+- [x] M0 — enumerate ten profiles and document unresolved manual ambiguities (2026-11-23).
 - [ ] M1 — collect and approve source/destination samples, including confidential-data sanitization.
 - [ ] M2 — snapshot expected manual outputs and derived totals for each profile.
 - [ ] M3 — harden profile schemas/parser contracts and add golden + negative fixture tests.
@@ -55,4 +55,4 @@ Original source never overwritten; compare prepared artifacts in an isolated dir
 
 ## Next step
 
-Obtain sanitized SGP/GBR/CBG Core/Starline/CCB/JZ/Dayforce CCB/Dayforce non-CCB samples and approved template headers; begin with `jz` and `gbr` because their numeric semantics are most uncertain.
+Obtain sanitized SGP/GBR/CBG Core/Starline/CCB/Reno/JZ/Dayforce CCB/Dayforce non-CCB/Taiwan samples and approved template headers; begin with `jz` and `gbr` because their numeric semantics are most uncertain.
