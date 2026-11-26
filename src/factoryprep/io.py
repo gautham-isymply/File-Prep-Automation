@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+from copy import copy
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -29,7 +30,9 @@ def read_book(path: Path) -> SourceBook:
         sheets: list[RawSheet] = []
         try:
             for sh in workbook.worksheets:
-                rows = [[CellValue(c.value, c.number_format, c.data_type) for c in row]
+                rows = [[CellValue(c.value, c.number_format, c.data_type,
+                                   copy(c.fill) if c.fill and c.fill.patternType else None)
+                         for c in row]
                         for row in sh.iter_rows()]
                 sheets.append(RawSheet(sh.title, rows))
         finally:
@@ -86,11 +89,16 @@ def write_prepared(prepared: Prepared, path: Path, output_format: str) -> None:
         sh.freeze_panes = "A2"
         for record in prepared.rows:
             sh.append([_excel_value(record.get(c)) for c in prepared.columns])
+        if prepared.auto_filter:
+            sh.auto_filter.ref = sh.dimensions
         for index, name in enumerate(prepared.columns, 1):
-            if name in prepared.date_formats:
-                fmt = prepared.date_formats[name]
+            fmt = prepared.date_formats.get(name, prepared.number_formats.get(name))
+            if fmt:
                 for row in sh.iter_rows(min_row=2, min_col=index, max_col=index):
                     row[0].number_format = fmt
+            for row_index, fills in enumerate(prepared.cell_fills, 2):
+                if name in fills:
+                    sh.cell(row_index, index).fill = copy(fills[name])
         wb.save(path)
 
 

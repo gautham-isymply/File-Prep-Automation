@@ -110,3 +110,12 @@ Logs are append-only summaries of work performed locally. **Not** actual plant f
 - `uv run --offline python scripts/smoke_exe.py dist/factoryprep.exe` — standalone-copy synthetic smoke **PASS**: ten profiles/descriptions, prepare/validate, repeated multi-file paths, failure reports and source preservation, GBR fraction gate, Reno DMY/comma hours, Dayforce required/hash-bound evidence and combined US audit.
 - `uv run --offline python scripts/check_docs.py` — **PASS**, 56 Markdown files / 10 mirrored profiles. `git diff --check` — **PASS** (line-ending normalization notices only).
 - EP-0007 remains active: M2 and synthetic packaging complete; M1/M3/M4 still require sanitized real files, missing Core filter evidence, actual JZ mappings, locale/unit/status/calendar decisions, approved destination schemas and source-owner acceptance under EP-0001. No production, receiving-PC UI gesture or downstream-load certification claimed.
+
+
+## 2026-11-26 — CCB Excel presentation (EP-0008)
+
+- Fixed distinction between numeric cell values and Excel Number display. Mirrored CCB profiles request 0.00 on four hours columns, retain static Row Labels fills and enable AutoFilter across all retained output rows without active criteria. Source filters/hidden-row state and conditional-formatting rules are not propagated.
+- Regression cases cover alias/dropped-column mapping, blank/summary removal, exact numeric precision/date format/fills, complete filter range, source hash and malformed output options. Initial targeted run exposed empty read-only cell fill=None; guarded it and all five targeted tests passed.
+- With workspace-local UV_CACHE_DIR: `uv run --offline pytest -q` — **540 passed in 21.27s**; `uv run --offline ruff check src tests` — **PASS**.
+- Re-ran user CCB command (same explicit sheet/week/source/output/report, offline): exit 0. Compared original versus regenerated output values: all 2676 data rows identical; source SHA256 unchanged. All four hours columns use 0.00; 11 RGB fills retained; filter A1:H2677. Verification script initially compared openpyxl StyleProxy objects directly; copied fill equality passed on follow-up. Metadata inspection, no Excel UI verification or destination certification. Raw files remain local/untracked.
+- `uv run --offline python scripts/check_docs.py` — **PASS**, 57 Markdown files / 10 mirrored profiles. `git diff --check` — **PASS** (line-ending notices only).

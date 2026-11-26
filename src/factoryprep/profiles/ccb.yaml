@@ -33,4 +33,13 @@ reconciliation:
   - name: ccb_selected_cost_centers_ot2
     column: Sum of OT2 Hr
     filters: [{column: Dept, in: ['3600161001','3600161002','3600161003','3600161004','3600161005','3600171000','3600171003','3600171004','3600171005']}]
-output: {format: xlsx, sheet: CCB}
+output:
+  format: xlsx
+  sheet: CCB
+  auto_filter: true
+  preserve_fill_columns: [Row Labels]
+  number_formats:
+    Sum of Reg Hr: '0.00'
+    Sum of OT1.5 Hr: '0.00'
+    Sum of OT2 Hr: '0.00'
+    Sum of Total Hr: '0.00'

@@ -89,6 +89,14 @@ def _validate_structure(data: dict, location: str) -> None:
         _text(key, f"{location}.columns.aliases key")
         _strings(names, f"{location}.columns.aliases.{key}")
     output = _mapping(data.get("output", {}), f"{location}.output")
+    for column, fmt in _mapping(output.get("number_formats", {}),
+                                f"{location}.output.number_formats").items():
+        _text(column, f"{location}.output.number_formats column")
+        _text(fmt, f"{location}.output.number_formats format")
+    if "preserve_fill_columns" in output:
+        _strings(output["preserve_fill_columns"], f"{location}.output.preserve_fill_columns")
+    if "auto_filter" in output and type(output["auto_filter"]) is not bool:
+        raise ConfigError(f"{location}.output.auto_filter must be boolean")
     if output.get("format", "xlsx") not in ("xlsx", "csv"):
         raise ConfigError(f"{location}: output format must be xlsx or csv")
     for key in ("sheet", "date_format"):

@@ -25,6 +25,7 @@
 | `external_refresh` | Requires hash-bound source_evidence attestation in overrides; absent/mismatched evidence blocks; no automatic refresh |
 | `source_schema_status: provisional` | risk warning for incomplete raw-source specification |
 | `output.format`, `output.sheet`, `output.columns`, `output.date_format` | output destination; explicit fixed columns are used by `reno` and `jz` processors |
+| `output.number_formats`, `output.preserve_fill_columns`, `output.auto_filter` | Tabular XLSX presentation: canonical column-to-format mapping; static fills follow retained source rows; full-table filter dropdowns without active criteria. Date formats take precedence. CSV has no styling. |
 | `defaults`, `category_mapping` | processor-specific Reno/JZ fields |
 | `timecard` | Reno date_input, decimal_separator, blank_hours (error/zero), zero_tokens; default DMY/comma/error/no status coercion |
 | `source_mode`, `raw_source` | JZ staging default; raw_cells requires sheet, approval, week_ending_cell, explicit date_input and categories with distinct label_cell/paid_cell/ot_cell addresses |

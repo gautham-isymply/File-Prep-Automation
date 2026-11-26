@@ -276,10 +276,20 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
         from datetime import timedelta
         diagnostics["reconciliation_period"] = {
             "start": str(ctx.week_ending - timedelta(days=6)), "end": str(ctx.week_ending)}
-    return Prepared(columns, rows, profile.get("output", {}).get("sheet", sheet.name),
+    output = profile.get("output", {})
+    fill_columns = set(output.get("preserve_fill_columns", []))
+    fills = [{name: sheet.rows[origin - 1][index].fill
+              for index, name in mapping.items()
+              if name in columns and name in fill_columns
+              and index < len(sheet.rows[origin - 1])
+              and sheet.rows[origin - 1][index].fill is not None}
+             for origin in origins] if fill_columns else []
+    return Prepared(columns, rows, output.get("sheet", sheet.name),
                     {name: c.get("excel_format", "yyyy-mm-dd") for name, c in dates.items()},
                     diagnostics=diagnostics,
-                    source_rows=origins)
+                    source_rows=origins,
+                    number_formats=output.get("number_formats", {}),
+                    cell_fills=fills, auto_filter=output.get("auto_filter", False))
 
 
 def _apply_overrides(rows: list[dict], origins: list[int], ctx: Context, report: RunReport) -> None:
