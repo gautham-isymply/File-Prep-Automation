@@ -5,3 +5,7 @@ __pycache__/
 # Executable build products
 /build/
 /dist/
+
+# data for testing
+/data/**
+!/data/**/

@@ -12,6 +12,7 @@ class CellValue:
     value: Any
     excel_format: str = "General"
     excel_type: str = "n"
+    fill: Any = None
 
 
 @dataclass
@@ -47,6 +48,9 @@ class Prepared:
     date_formats: dict[str, str] = field(default_factory=dict)
     diagnostics: dict[str, Any] = field(default_factory=dict)
     source_rows: list[int | None] = field(default_factory=list)
+    number_formats: dict[str, str] = field(default_factory=dict)
+    cell_fills: list[dict[str, Any]] = field(default_factory=list)
+    auto_filter: bool = False
 
 
 @dataclass

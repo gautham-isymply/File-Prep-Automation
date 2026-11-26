@@ -1,5 +1,7 @@
 # Execution plans and technical debt
 
+- **Completed:** [EP-0008 — CCB Excel formatting](completed/EP-0008-ccb-excel-formatting.md).
+
 - **Active / engineering corrections implemented; real certification open:** [EP-0007 â€” manual parsing corrections for all ten workflows](active/EP-0007-manual-parsing-corrections.md).
 
 - [Plan protocol](../PLANS.md); [blank template](TEMPLATE.md).

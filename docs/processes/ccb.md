@@ -19,6 +19,8 @@ Filter highlighted row by colour and change one `Sum of Reg Hr` cell from 65.8 t
 
 **Updated 2026-11-26:** Four hours fields are numeric; Notes is removed. A reviewed override must match one row and the expected old value; replacement values are parsed and checked for invalid/negative values before use. The program never globally replaces 65.8 or silently recalculates Total. Summary markers are tested only in the first mapped column, with optional explicit table configuration and audit. Requested-week diagnostics now include separate Reg, OT1.5 and OT2 totals for the documented CC list; combine the two OT values for source reconciliation.
 
+**Excel presentation (2026-11-26):** Four summarized hours columns use Number format `0.00` (two displayed decimals; stored values are not rounded). Static source fills in `Row Labels` follow retained rows. AutoFilter dropdowns cover all output rows, enabling colour filtering in Excel, with no active criteria as the manual instructs. Conditional formatting rules, font colours and other source styling are not copied. See [regressions](../../tests/test_ccb_formatting.py) and [EP-0008](../exec-plans/completed/EP-0008-ccb-excel-formatting.md).
+
 **Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
