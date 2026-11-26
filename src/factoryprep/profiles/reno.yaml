@@ -1,6 +1,11 @@
 id: reno
 description: Reno (3601) - sum weekly employee timecard rows into seven daily template records
 processor: reno
+timecard:
+  date_input: DMY
+  decimal_separator: ","
+  blank_hours: error
+  zero_tokens: []
 defaults:
   segment: PAC
   plant: '3601'

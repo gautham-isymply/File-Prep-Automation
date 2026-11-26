@@ -3,22 +3,23 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
-from typing import Optional
-import json
+from typing import Annotated
 
 import typer
 import yaml
 
 from .config import available_profiles, load_profile
 from .detect import detect_profile
+from .drop import prepare_dropped
 from .engine import format_report, run
+from .reconcile import combine_reports
 
 app = typer.Typer(help="Factory Insights preparation and source-data quality checks (no BW integration)",
                   no_args_is_help=True)
 
 
 @app.command("profiles")
-def profiles(config_dir: Optional[Path] = typer.Option(None, help="Custom directory of YAML profiles")):
+def profiles(config_dir: Annotated[Path | None, typer.Option(help="Custom directory of YAML profiles")] = None):
     """List available input workflows."""
     for name in available_profiles(config_dir):
         profile = load_profile(name, config_dir)
@@ -26,9 +27,9 @@ def profiles(config_dir: Optional[Path] = typer.Option(None, help="Custom direct
 
 
 @app.command("detect")
-def detect(input: Path = typer.Option(..., "--input", "-i"),
-           config_dir: Optional[Path] = typer.Option(None, "--config-dir"),
-           sheet: Optional[str] = typer.Option(None, "--sheet")):
+def detect(input: Annotated[Path, typer.Option("--input", "-i")],
+           config_dir: Annotated[Path | None, typer.Option("--config-dir")] = None,
+           sheet: Annotated[str | None, typer.Option("--sheet")] = None):
     """Conservatively identify a single matching profile from filename and headers."""
     try:
         typer.echo(detect_profile(input, config_dir, sheet))
@@ -38,12 +39,12 @@ def detect(input: Path = typer.Option(..., "--input", "-i"),
 
 
 @app.command("describe")
-def describe(profile: str, config_dir: Optional[Path] = None):
+def describe(profile: str, config_dir: Path | None = None):
     """Show a profile's expected columns and preparation rules."""
     typer.echo(yaml.safe_dump(load_profile(profile, config_dir), sort_keys=False))
 
 
-def _parse_week_ending(s: Optional[str]) -> date | None:
+def _parse_week_ending(s: str | None) -> date | None:
     if s is None:
         return None
     try:
@@ -52,9 +53,9 @@ def _parse_week_ending(s: Optional[str]) -> date | None:
         raise typer.BadParameter("Use YYYY-MM-DD for --week-ending") from exc
 
 
-def _execute(profile: str, input: Path, output: Optional[Path], config_dir: Optional[Path],
-             sheet: Optional[str], week_ending: Optional[str], reference: Optional[Path],
-             overrides: Optional[Path], strict: bool, report: Optional[Path],
+def _execute(profile: str, input: Path, output: Path | None, config_dir: Path | None,
+             sheet: str | None, week_ending: str | None, reference: Path | None,
+             overrides: Path | None, strict: bool, report: Path | None,
              validate_only: bool) -> None:
     try:
         result = run(profile=profile, source=input, output=output, config_dir=config_dir,
@@ -71,16 +72,16 @@ def _execute(profile: str, input: Path, output: Optional[Path], config_dir: Opti
 
 @app.command("prepare")
 def prepare(
-    profile: str = typer.Option(..., "--profile", "-p", help="Workflow ID, e.g. gbr, or auto to detect"),
-    input: Path = typer.Option(..., "--input", "-i", help="Original source workbook/CSV"),
-    output: Optional[Path] = typer.Option(None, "--output", "-o"),
-    config_dir: Optional[Path] = typer.Option(None, "--config-dir"),
-    sheet: Optional[str] = typer.Option(None, "--sheet"),
-    week_ending: Optional[str] = typer.Option(None, "--week-ending", help="Saturday YYYY-MM-DD"),
-    reference: Optional[Path] = typer.Option(None, "--reference", help="Real destination header template"),
-    overrides: Optional[Path] = typer.Option(None, "--overrides", help="Audited per-row corrections YAML"),
-    strict: bool = typer.Option(False, "--strict", help="Warnings also block output"),
-    report: Optional[Path] = typer.Option(None, "--report", help="Path for JSON quality report"),
+    profile: Annotated[str, typer.Option("--profile", "-p", help="Workflow ID, e.g. gbr, or auto to detect")],
+    input: Annotated[Path, typer.Option("--input", "-i", help="Original source workbook/CSV")],
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+    config_dir: Annotated[Path | None, typer.Option("--config-dir")] = None,
+    sheet: Annotated[str | None, typer.Option("--sheet")] = None,
+    week_ending: Annotated[str | None, typer.Option("--week-ending", help="Saturday YYYY-MM-DD")] = None,
+    reference: Annotated[Path | None, typer.Option("--reference", help="Real destination header template")] = None,
+    overrides: Annotated[Path | None, typer.Option("--overrides", help="Reviewed corrections and source evidence YAML")] = None,
+    strict: Annotated[bool, typer.Option("--strict", help="Warnings also block output")] = False,
+    report: Annotated[Path | None, typer.Option("--report", help="Path for JSON quality report")] = None,
 ):
     """Validate, normalize and generate a candidate prepared file (no BW loading)."""
     _execute(profile, input, output, config_dir, sheet, week_ending, reference,
@@ -89,16 +90,16 @@ def prepare(
 
 @app.command("validate")
 def validate(
-    profile: str = typer.Option(..., "--profile", "-p"),
-    input: Path = typer.Option(..., "--input", "-i"),
-    output: Optional[Path] = typer.Option(None, "--output", help="Output name used to locate report"),
-    config_dir: Optional[Path] = typer.Option(None, "--config-dir"),
-    sheet: Optional[str] = typer.Option(None, "--sheet"),
-    week_ending: Optional[str] = typer.Option(None, "--week-ending"),
-    reference: Optional[Path] = typer.Option(None, "--reference"),
-    overrides: Optional[Path] = typer.Option(None, "--overrides"),
-    strict: bool = typer.Option(False, "--strict"),
-    report: Optional[Path] = typer.Option(None, "--report"),
+    profile: Annotated[str, typer.Option("--profile", "-p")],
+    input: Annotated[Path, typer.Option("--input", "-i")],
+    output: Annotated[Path | None, typer.Option("--output", help="Output name used to locate report")] = None,
+    config_dir: Annotated[Path | None, typer.Option("--config-dir")] = None,
+    sheet: Annotated[str | None, typer.Option("--sheet")] = None,
+    week_ending: Annotated[str | None, typer.Option("--week-ending")] = None,
+    reference: Annotated[Path | None, typer.Option("--reference")] = None,
+    overrides: Annotated[Path | None, typer.Option("--overrides")] = None,
+    strict: Annotated[bool, typer.Option("--strict")] = False,
+    report: Annotated[Path | None, typer.Option("--report")] = None,
 ):
     """Run every check, produce JSON report, but do not create prepared output."""
     _execute(profile, input, output, config_dir, sheet, week_ending, reference,
@@ -106,8 +107,8 @@ def validate(
 
 
 @app.command("batch")
-def batch(manifest: Path = typer.Option(..., "--manifest", help="YAML containing jobs list"),
-          strict: bool = typer.Option(False, "--strict")):
+def batch(manifest: Annotated[Path, typer.Option("--manifest", help="YAML containing jobs list")],
+          strict: Annotated[bool, typer.Option("--strict")] = False):
     """Prepare multiple files sequentially, each with its own YAML profile."""
     data = yaml.safe_load(manifest.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or not isinstance(data.get("jobs"), list):
@@ -133,6 +134,35 @@ def batch(manifest: Path = typer.Option(..., "--manifest", help="YAML containing
     typer.echo(f"Batch complete: {len(data['jobs']) - failed} succeeded; {failed} failed")
     if failed:
         raise typer.Exit(2)
+
+
+@app.command("drop")
+def drop(
+    files: Annotated[list[Path], typer.Argument(help="One or more source files")],
+    profile: Annotated[str, typer.Option("--profile", "-p")] = "auto",
+    config_dir: Annotated[Path | None, typer.Option("--config-dir")] = None,
+    sheet: Annotated[str | None, typer.Option("--sheet")] = None,
+    week_ending: Annotated[str | None, typer.Option("--week-ending")] = None,
+    strict: Annotated[bool, typer.Option("--strict")] = False,
+):
+    """Prepare dropped files in fresh folders beside each source; never guess a profile."""
+    if prepare_dropped(files, profile, config_dir, sheet, _parse_week_ending(week_ending), strict):
+        raise typer.Exit(2)
+
+
+@app.command("reconcile")
+def reconcile(
+    group: Annotated[str, typer.Option("--group")],
+    reports: Annotated[list[Path], typer.Option("--component", help="Repeat for each component quality JSON")],
+    output: Annotated[Path, typer.Option("--output", "-o")],
+):
+    """Combine two approved weekly CBG or US source audits."""
+    try:
+        result = combine_reports(group, reports, output)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        typer.echo(f"Cannot reconcile: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    typer.echo(f"[{result['status']}] {group}: paid={result['paid_hours']}, OT={result['ot_hours']}")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ id: sgp
 description: SGP attendance - YYYYMMDD dates and remove scheduled time columns
 processor: tabular
 header_scan_rows: 25
+reconciliation_date_column: DATE
 columns:
   required: [DATE, NORM, OT]
   aliases:

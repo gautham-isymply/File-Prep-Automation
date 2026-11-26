@@ -52,3 +52,7 @@ Checks must not mutate code or raw inputs. If checker produces a false positive,
 ## Next step
 
 Implement and validate full profile schema lint and boundary tests; keep this plan active until independently enforceable.
+
+2026-11-25 update: [EP-0004](../completed/EP-0004-validation-coverage.md) adds structural
+validation and config-negative tests. M3 remains open: unknown keys and semantic
+cross-field/processor relationships are not fully validated before source parsing.

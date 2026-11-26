@@ -2,6 +2,7 @@ id: dayforce_ccb
 description: Dayforce CCB - remove Receiving Farmingdale and validate US hours
 processor: tabular
 external_refresh: true
+reconciliation_date_column: Pay_Date
 columns:
   required: [Cost_Center, Pay_Date, Location, Pay_Category, Normal]
   aliases:
@@ -13,18 +14,18 @@ columns:
 dates:
   - {column: Pay_Date, input: MDY, excel_format: m/d/yyyy}
 exclude_rows:
-  - {column: Cost_Center, contains: '3600172100', expect_label_contains: Receiving Farmingdale}
+  - {column: Cost_Center, cost_center_code: '3600172100', expect_label: Receiving Farmingdale}
 reconciliation:
   - name: us_ccb_reg_hours
     column: Normal
     filters:
       - {column: Pay_Category, in: [Reg]}
       - {column: Location, in: [DPC CCB]}
-      - {column: Cost_Center, contains_any: ['1000 > Direct Labor','1001 > Direct Labor','1002 > Direct Labor','1003 > Direct Labor','1004 > Direct Labor','1005 > Direct Labor']}
+      - {column: Cost_Center, cost_center_in: ['1000 > Direct Labor','1001 > Direct Labor','1002 > Direct Labor','1003 > Direct Labor','1004 > Direct Labor','1005 > Direct Labor']}
   - name: us_ccb_ot_hours
     column: Normal
     filters:
       - {column: Pay_Category, in: ['OT 1.5']}
       - {column: Location, in: [DPC CCB]}
-      - {column: Cost_Center, contains_any: ['1000 > Direct Labor','1001 > Direct Labor','1002 > Direct Labor','1003 > Direct Labor','1004 > Direct Labor','1005 > Direct Labor']}
+      - {column: Cost_Center, cost_center_in: ['1000 > Direct Labor','1001 > Direct Labor','1002 > Direct Labor','1003 > Direct Labor','1004 > Direct Labor','1005 > Direct Labor']}
 output: {format: xlsx, sheet: Dayforce_CCB}

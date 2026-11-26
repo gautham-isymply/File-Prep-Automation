@@ -3,12 +3,13 @@ description: CBG Starline Core2 - strip preamble/totals, write Core tab and nume
 processor: tabular
 skip_summary_rows: true
 header_scan_rows: 45
+reconciliation_contract_confirmed: false
 columns:
-  required: [Pay Rate]
+  required: [Pay Rate, Pay Code, Hours/Units]
   aliases:
     Pay Rate: [PayRate, PAY RATE]
-  numeric: [Pay Rate]
-  negative_forbidden: [Pay Rate]
+  numeric: [Pay Rate, Hours/Units]
+  negative_forbidden: [Pay Rate, Hours/Units]
 reconciliation:
   - name: core_reg_hours
     column: Hours/Units

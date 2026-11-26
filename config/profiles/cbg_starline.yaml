@@ -3,6 +3,7 @@ description: CBG Starline SSI - clean preamble/trailers, W/E date, Shift removal
 processor: tabular
 skip_summary_rows: true
 header_scan_rows: 45
+reconciliation_date_column: W/E Date
 columns:
   required: [W/E Date, BRD]
   aliases:
@@ -10,9 +11,10 @@ columns:
     BRD: [B R D]
   drop: [Shift]
   numeric: [BRD]
+  numeric_if_present: [Straight Hrs, Overtime Hrs]
   negative_forbidden: [BRD]
 dates:
-  - {column: W/E Date, input: MDY, excel_format: m/d/yyyy, split_delimiter: ';' }
+  - {column: W/E Date, input: auto, excel_format: m/d/yyyy, split_delimiter: ';' }
 reconciliation:
   - name: starline_straight_hours_filtered
     column: Straight Hrs

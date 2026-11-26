@@ -27,7 +27,7 @@ def detect_profile(path: Path, config_dir: Path | None = None,
     for name in available_profiles(config_dir):
         spec = load_profile(name, config_dir)
         if spec.get("processor") == "reno":
-            if _has_weekly_dates(sheets):
+            if _has_weekly_dates(sheets, spec.get("timecard", {}).get("date_input", "DMY")):
                 possible.append((name, 7))
             continue
         column_cfg = spec.get("columns", {})
@@ -59,13 +59,13 @@ def _possible_headers(sheet) -> list[set[str]]:
             for row in sheet.rows[:45]]
 
 
-def _has_weekly_dates(sheets) -> bool:
+def _has_weekly_dates(sheets, mode="DMY") -> bool:
     for sh in sheets:
         for row in sh.rows[:15]:
             found = set()
             for cell in row:
                 try:
-                    date = parse_date(cell.value, "MDY")
+                    date = parse_date(cell.value, mode)
                     if 2020 <= date.year <= 2100:
                         found.add(date)
                 except (TypeError, ValueError, OverflowError):

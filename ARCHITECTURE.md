@@ -33,14 +33,16 @@ Quality gate: ERROR blocks; --strict also blocks WARNING
 |---|---|---|
 | `models.py` | `CellValue`, `SourceBook`, `Prepared`, `Context`, `Issue`, `RunReport` | stdlib |
 | `transform.py` | Pure normalizers; time/date/number parsing | models, openpyxl |
-| `config.py` | Load YAML, shallow config checks, correction files | stdlib, yaml |
+| `config.py` | Load YAML, structural config checks, correction files | stdlib, yaml |
 | `io.py` | Read xlsx/xlsm/csv/tsv, write xlsx/csv, reference headers | models, openpyxl |
 | `detect.py` | Conservative header + filename profile detection | config, io, transform |
 | `pipelines/tabular.py` | Header selection, row cleanup, validation, source metrics | models, transform |
 | `pipelines/reno.py` | Seven-day timecard aggregation | models, transform |
 | `pipelines/jz.py` | Five-category-to-profit-center transformation | models, transform, tabular |
 | `engine.py` | Orchestration, quality gate, report, output lifecycle | config, detect, io, models, pipelines |
+| `reconcile.py` | Combine successful matching-week CBG/US source reports; validate component evidence | stdlib |
 | `cli.py` | Typer commands, CLI exit codes and sequential batch | config, detect, engine |
+| `launcher.py`, `drop.py` | Console/EXE dispatch, Explorer pause, sequential file drops in fresh output folders | cli (launcher only), config, detect, engine |
 
 Rule for new work: extend a YAML profile when behavior fits the tabular primitives; create a pipeline module only for distinct input shape/aggregation. Do not add business-specific parsing to `cli.py` or `io.py`. **This is a documented target boundary, not yet enforced by an import linter** ([TD-006](docs/exec-plans/tech-debt-tracker.md)).
 

@@ -12,4 +12,5 @@ columns:
 dates:
   - {column: Date, input: MDY, excel_format: m/d/yyyy}
 date_continuity_column: Date
+reconciliation_date_column: Date
 output: {format: csv, sheet: Taiwan}

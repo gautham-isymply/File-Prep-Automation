@@ -17,21 +17,25 @@ Remove rows above header and below last data; convert `W/E Date` using Text to C
 
 ## Current Python implementation (code-derived)
 
-Scan up to 45 rows, drop total/subtotal marker rows, require `W/E Date` and `BRD`, parse dates as `MDY`, permit only empty trailing semicolon in date cell, format `m/d/yyyy`, drop `Shift`, numeric nonnegative BRD. `CHARGECODE` filters are advisory source metrics.
+**Updated 2026-11-26:** W/E Date now uses conservative `auto`: native/ISO/unambiguous dates parse, but ambiguous slash dates fail until an approved custom profile declares MDY or DMY. Empty semicolon suffixes are accepted; nonblank extra content blocks. Shift is removed; BRD and present Straight Hrs/Overtime Hrs fields are numeric. First-column summary detection, exact repeated-header detection, explicit table bounds and skipped-row audit replace any-cell total detection. CHARGECODE totals require a requested week; combined CBG audit requires an approved Core counterpart.
 
-**Output:** `xlsx`; configured sheet `Starline SSI`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-Screenshot date examples appear MDY while wizard says YMD; current MDY is an **assumption**, not verified. Nonempty text after semicolon is treated as error, avoiding data loss. Exact end-of-table structures/headers unknown.
+YMD wizard versus MDY-looking screenshot remains unresolved (TD-009). Auto mode is a blocking safeguard, not locale certification. Exact table boundaries and destination schema remain unverified. Numeric source errors must be resolved, never silently omitted from sums.
 
 ## Operator command
 
 ```bash
-uv run factoryprep prepare --profile cbg_starline --input SOURCE.xlsx --output cbg_starline_prepared.xlsx --report cbg_starline_quality.json
+uv run factoryprep prepare --profile cbg_starline --input SOURCE.xlsx --week-ending 2026-03-14 --output cbg_starline_prepared.xlsx --report cbg_starline_quality.json
 ```
 
 Inspect `cbg_starline_quality.json` for `issues`, `status`, row counts and `diagnostics`; **do not** use stale output from a failed run. `--strict` treats all warnings as blocking.
+
+## Automated regression evidence
+
+The [test matrix](../quality/TEST_STRATEGY.md) maps shared file/config guards, per-field failures and profile operations to executable synthetic tests. Malformed supported config structures fail before source parsing; CSV delimiter fallback and damaged Excel-container handling are shared input guards. 2026-11-26 corrections are covered by `tests/test_manual_corrections.py`; these are synthetic fixtures. Real-source certification remains open.
 
 ## Certification test (not yet evidenced)
 

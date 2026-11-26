@@ -1,11 +1,10 @@
 """Config-driven tabular normalization used by seven source families."""
 from __future__ import annotations
 
-from collections import Counter
 from datetime import date
 from typing import Any
 
-from ..models import Context, Prepared, RawSheet, RunReport, CellValue
+from ..models import CellValue, Context, Prepared, RawSheet, RunReport
 from ..transform import excel_hours, is_blank, norm, parse_date, parse_number, suggest_header
 
 
@@ -93,30 +92,47 @@ def select_tabular_sheet(sheets: list[RawSheet], ctx: Context, report: RunReport
     return winners[0]
 
 
-def _row_is_summary(cells: list[CellValue], profile: dict[str, Any]) -> bool:
+def _row_is_summary(cells: list[CellValue], profile: dict[str, Any],
+                    mapping: dict[int, str]) -> bool:
     if not profile.get("skip_summary_rows"):
         return False
-    return any(isinstance(c.value, str) and c.value.strip().lower() in
-               {"total", "grand total", "subtotal", "totals"} for c in cells)
+    table = profile.get("table", {})
+    labels = {str(s).strip().casefold() for s in table.get(
+        "summary_labels", ["total", "grand total", "subtotal", "totals"])}
+    selected = table.get("summary_columns", [next(iter(mapping.values()))])
+    return any(i < len(cells) and str(cells[i].value).strip().casefold() in labels
+               for i, name in mapping.items() if name in selected)
+
+
+def _cost_center(value: Any) -> tuple[str, str] | None:
+    """Only the documented code > label shape; never substring-match a code."""
+    import re
+    match = re.fullmatch(r"\s*(\d+)\s*>\s*(\S.*?)\s*", str(value))
+    return (match[1], " ".join(match[2].casefold().split())) if match else None
 
 
 def _matches(value: Any, rule: dict[str, Any]) -> bool:
+    if "cost_center_code" in rule:
+        import re
+        parsed = _cost_center(value)
+        token = re.match(r"\s*(\d+)", str(value))
+        # Exact numeric tokens with malformed labels reach the blocking label guard.
+        return (parsed[0] if parsed else token[1] if token else "") == rule["cost_center_code"]
     if "equals" in rule and norm(value) != norm(rule["equals"]):
         return False
     if "contains" in rule and norm(rule["contains"]) not in norm(value):
         return False
-    if "in" in rule and norm(value) not in {norm(x) for x in rule["in"]}:
-        return False
-    return True
+    return not ("in" in rule and norm(value) not in {norm(x) for x in rule["in"]})
 
 
 def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: RunReport) -> Prepared:
     profile = ctx.profile
     cfg = profile.get("columns", {})
     raw_headers = [str(c.value).strip() if not is_blank(c.value) else "" for c in sheet.rows[header_index]]
+    errors_before_header = report.errors
     mapping = _header_mapping(raw_headers, profile, report)
     missing = [c for c in cfg.get("required", []) if c not in mapping.values()]
-    if missing or report.errors:
+    if missing or report.errors > errors_before_header:
         return Prepared([], [], sheet.name)
     drops = set(cfg.get("drop", []))
     for name in drops:
@@ -125,6 +141,7 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
     columns = [name for name in mapping.values() if name not in drops]
     dates: dict[str, dict[str, Any]] = {item["column"]: item for item in profile.get("dates", [])}
     numeric = set(cfg.get("numeric", []))
+    numeric.update(set(cfg.get("numeric_if_present", [])) & set(columns))
     hours = set(profile.get("time_to_hours", []))
     strict_null = set(cfg.get("non_null", []))
     no_negative = set(cfg.get("negative_forbidden", []))
@@ -139,18 +156,52 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
     seen_keys: dict[tuple[Any, ...], int] = {}
     skip_rules = profile.get("exclude_rows", [])
     excluded = 0
+    row_audit = []
+    table = profile.get("table", {})
+    source_dates = []
+    date_column = profile.get("reconciliation_date_column")
+    if table.get("first_data_row", header_index + 2) <= header_index + 1:
+        report.add("ERROR", "INVALID_TABLE_RANGE", "Data range overlaps header")
+    for name in table.get("summary_columns", []):
+        if name not in mapping.values():
+            report.add("ERROR", "SUMMARY_COLUMN_MISSING", f"Missing summary label column {name}")
     for row_index, cells in enumerate(sheet.rows[header_index + 1:], start=header_index + 2):
-        if all(is_blank(c.value) for c in cells):
+        if not table.get("first_data_row", header_index + 2) <= row_index <= table.get(
+            "last_data_row", len(sheet.rows)
+        ):
+            row_audit.append({"row": row_index, "reason": "declared_table_boundary"})
             continue
-        if _row_is_summary(cells, profile):
+        if all(is_blank(c.value) for c in cells):
+            row_audit.append({"row": row_index, "reason": "blank"})
+            continue
+        if _row_is_summary(cells, profile, mapping):
+            row_audit.append({"row": row_index, "reason": "summary_label"})
+            continue
+        if profile.get("skip_summary_rows") and all(
+            i < len(cells) and norm(cells[i].value) == norm(raw_headers[i]) for i in mapping
+        ):
+            row_audit.append({"row": row_index, "reason": "repeated_header"})
             continue
         raw_data = {name: cells[index] if index < len(cells) else CellValue(None)
                     for index, name in mapping.items()}
+        if date_column in raw_data:
+            try:
+                source_dates.append(parse_date(raw_data[date_column].value,
+                                               dates.get(date_column, {}).get("input", "auto")))
+            except (ValueError, TypeError):
+                pass  # Retained records receive normal field errors below.
         excluded_here = False
         for rule in skip_rules:
             if rule["column"] not in raw_data or not _matches(raw_data[rule["column"]].value, rule):
                 continue
             expected_label = rule.get("expect_label_contains")
+            if "expect_label" in rule:
+                parsed = _cost_center(raw_data[rule["column"]].value)
+                if not parsed or parsed[1] != " ".join(rule["expect_label"].casefold().split()):
+                    report.add("ERROR", "EXCLUDED_ROW_LABEL_MISMATCH",
+                               "Exact exclusion code has an unexpected/missing label",
+                               row_index, rule["column"])
+                    break
             if expected_label and norm(expected_label) not in norm(raw_data[rule["column"]].value):
                 report.add("ERROR", "EXCLUDED_ROW_LABEL_MISMATCH",
                            f"Cost center matches exclusion code but label is not {expected_label!r}",
@@ -160,6 +211,8 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
             break
         if excluded_here:
             excluded += 1
+            row_audit.append({"row": row_index, "reason": "exclude_rows",
+                              "hours": raw_data.get("Normal", CellValue(None)).value})
             continue
         record: dict[str, Any] = {}
         for name in columns:
@@ -186,7 +239,8 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
                                    f"Removed trailing {delim!r} delimiter", row_index, name)
                     val = parse_date(val, dates[name].get("input", "auto"))
                 elif name in hours:
-                    val = excel_hours(cell, report, row_index, name)
+                    val = excel_hours(cell, report, row_index, name,
+                                      profile.get("hours_encoding", {}).get(name, "cell_format"))
                 elif name in numeric:
                     val = parse_number(val)
                 if name in no_negative and isinstance(val, (int, float)) and val < 0:
@@ -210,10 +264,21 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
     _manual_reviews(rows, origins, profile, report)
     _check_cross_field_sums(rows, origins, profile, report)
     _check_dates(rows, origins, profile, ctx, report)
-    metrics = _calculate_metrics(rows, profile, report)
+    metrics = _calculate_metrics(rows, profile, report, ctx.week_ending)
+    diagnostics = {"filtered_reconciliation_metrics": metrics, "excluded_rows": excluded,
+                   "row_audit": row_audit,
+                   "reconciliation_contract_confirmed": profile.get(
+                       "reconciliation_contract_confirmed", True),
+                   "reconciliation_scoped": bool(date_column and ctx.week_ending)}
+    if source_dates:
+        diagnostics["date_range"] = {"min": str(min(source_dates)), "max": str(max(source_dates))}
+    if ctx.week_ending:
+        from datetime import timedelta
+        diagnostics["reconciliation_period"] = {
+            "start": str(ctx.week_ending - timedelta(days=6)), "end": str(ctx.week_ending)}
     return Prepared(columns, rows, profile.get("output", {}).get("sheet", sheet.name),
                     {name: c.get("excel_format", "yyyy-mm-dd") for name, c in dates.items()},
-                    diagnostics={"filtered_reconciliation_metrics": metrics, "excluded_rows": excluded},
+                    diagnostics=diagnostics,
                     source_rows=origins)
 
 
@@ -234,7 +299,22 @@ def _apply_overrides(rows: list[dict], origins: list[int], ctx: Context, report:
             report.add("ERROR", "OVERRIDE_OLD_VALUE_MISMATCH",
                        f"Expected {fix.get('expected_old')!r}, found {record[target]!r}", source_row, target)
             continue
-        record[target] = fix["new_value"]
+        candidate = fix["new_value"]
+        cfg = ctx.profile.get("columns", {})
+        try:
+            if target in cfg.get("numeric", []) + cfg.get("numeric_if_present", []) + ctx.profile.get("time_to_hours", []):
+                candidate = parse_number(candidate)
+            if target in cfg.get("non_null", []) and is_blank(candidate):
+                raise ValueError("blank correction for required value")
+            if target in cfg.get("negative_forbidden", []) and isinstance(candidate, (int, float)) and candidate < 0:
+                raise ValueError("negative correction")
+            for rule in ctx.profile.get("dates", []):
+                if target == rule["column"]:
+                    candidate = parse_date(candidate, rule.get("input", "auto"))
+        except (ValueError, TypeError) as exc:
+            report.add("ERROR", "INVALID_CORRECTION_VALUE", str(exc), source_row, target)
+            continue
+        record[target] = candidate
         report.add("INFO", "APPROVED_CORRECTION",
                    f"Changed {target} from {fix['expected_old']} to {fix['new_value']}", source_row, target)
 
@@ -271,9 +351,18 @@ def _check_dates(rows: list[dict], origins: list[int], profile: dict, ctx: Conte
     values = {r[date_column] for r in rows if isinstance(r.get(date_column), date)}
     if not values:
         return
+    seen = set()
+    for record, origin in zip(rows, origins):
+        day = record.get(date_column)
+        if isinstance(day, date):
+            if day in seen:
+                report.add("WARNING", "DUPLICATE_DATE", "Repeated source date; no rows removed", origin, date_column)
+            seen.add(day)
     start = min(values)
     end = max(values)
     from datetime import timedelta
+    if ctx.week_ending:
+        start, end = ctx.week_ending - timedelta(days=6), ctx.week_ending
     missing = [start + timedelta(days=i) for i in range((end - start).days + 1)
                if start + timedelta(days=i) not in values]
     if missing:
@@ -284,18 +373,36 @@ def _check_dates(rows: list[dict], origins: list[int], profile: dict, ctx: Conte
         report.add("ERROR", "INVALID_WEEK_END", "Week-ending date must be a Saturday")
 
 
-def _calculate_metrics(rows: list[dict], profile: dict, report: RunReport) -> dict:
+def _calculate_metrics(rows: list[dict], profile: dict, report: RunReport,
+                       week_ending: date | None = None) -> dict:
     """Metrics are advisory source totals, NEVER filters applied to output."""
     results: dict[str, Any] = {}
+    if not profile.get("reconciliation"):
+        return results
+    if not profile.get("reconciliation_contract_confirmed", True):
+        report.add("WARNING", "RECONCILIATION_CONTRACT_UNCONFIRMED",
+                   "Department filters are unconfirmed; totals are provisional")
+    date_column = profile.get("reconciliation_date_column")
+    if date_column and not week_ending:
+        report.add("WARNING", "RECONCILIATION_WEEK_REQUIRED",
+                   "Use --week-ending for weekly totals; unscoped totals are not reported")
+        return results
     for spec in profile.get("reconciliation", []):
         source = spec["column"]
         required = {source, *(rule["column"] for rule in spec.get("filters", []))}
+        if date_column:
+            required.add(date_column)
         absent = sorted(required - (set(rows[0]) if rows else set()))
         if absent:
             report.add("WARNING", "RECONCILIATION_COLUMNS_MISSING",
                        f"Cannot calculate {spec['name']}; missing columns {absent}")
             continue
         selected = rows
+        if date_column and week_ending:
+            from datetime import timedelta
+            start = week_ending - timedelta(days=6)
+            selected = [r for r in selected if isinstance(r.get(date_column), date)
+                        and start <= r[date_column] <= week_ending]
         for rule in spec.get("filters", []):
             col = rule["column"]
             if "in" in rule:
@@ -304,6 +411,19 @@ def _calculate_metrics(rows: list[dict], profile: dict, report: RunReport) -> di
                 selected = [r for r in selected if norm(r.get(col)) not in {norm(x) for x in rule["not_in"]}]
             if "contains_any" in rule:
                 selected = [r for r in selected if any(norm(s) in norm(r.get(col)) for s in rule["contains_any"])]
-        valid = [r[source] for r in selected if isinstance(r.get(source), (int, float))]
+            if "cost_center_in" in rule:
+                selected = [r for r in selected if _cost_center(r.get(col)) in
+                            {_cost_center(s) for s in rule["cost_center_in"]} - {None}]
+        valid = []
+        invalid = False
+        for record in selected:
+            try:
+                valid.append(parse_number(record.get(source)))
+            except (ValueError, TypeError):
+                report.add("ERROR", "INVALID_RECONCILIATION_VALUE",
+                           f"Cannot sum every selected value for {spec['name']}", column=source)
+                invalid = True
+        if invalid:
+            continue
         results[spec["name"]] = {"total": round(sum(valid), 6), "rows": len(selected)}
     return results

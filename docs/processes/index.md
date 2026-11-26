@@ -15,4 +15,4 @@
 | `dayforce_non_ccb` | Dayforce non-CCB | tabular | 32–35 | [Dayforce non-CCB](dayforce_non_ccb.md) |
 | `taiwan` | Taiwan | tabular | 36–39 | [Taiwan](taiwan.md) |
 
-**Date convention:** Sunday start → Saturday end per manual introduction. SQL example discrepancies are documented in [evidence map](../references/MANUAL_EVIDENCE.md). No BW execution. Run a profile with `uv run factoryprep prepare --profile <id> --input SOURCE.xlsx`; use `.csv` output for Taiwan. JZ requires `--week-ending` and normalized staging source.
+**Date convention:** Sunday start → Saturday end per manual introduction. SQL example discrepancies are documented in [evidence map](../references/MANUAL_EVIDENCE.md). No BW execution. Run a profile with `uv run factoryprep prepare --profile <id> --input SOURCE.xlsx`; use `.csv` output for Taiwan. Weekly metrics require --week-ending; Dayforce requires source-bound refresh evidence. JZ defaults to normalized staging, with optional explicitly mapped raw extraction. See [operations](../OPERATIONS.md) for all correction contracts.

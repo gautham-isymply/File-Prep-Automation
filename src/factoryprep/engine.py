@@ -1,16 +1,15 @@
 """Orchestration: never write output if an ERROR is present."""
 from __future__ import annotations
 
-from datetime import date
 import json
+from datetime import date
 from pathlib import Path
-from typing import Any
 
-from .config import load_profile, load_overrides
+from .config import load_overrides, load_profile
 from .detect import detect_profile
 from .io import read_book, read_reference_columns, write_prepared
 from .models import Context, Prepared, RunReport
-from .pipelines.jz import prepare_jz
+from .pipelines.jz import prepare_jz, prepare_raw_jz
 from .pipelines.reno import choose_reno_sheet, prepare_reno
 from .pipelines.tabular import prepare_tabular, select_tabular_sheet
 
@@ -28,6 +27,8 @@ def run(profile: str, source: Path, output: Path | None = None,
     target = output or source.with_name(f"{source.stem}_{profile}_prepared.{fmt}")
     report_file = report_path or target.with_name(target.stem + "_quality.json")
     result = RunReport(profile, str(source))
+    if report_file.resolve() in {source.resolve(), target.resolve()}:
+        raise ValueError("Report must differ from source and candidate output")
     try:
         ctx = Context(spec, week_ending, sheet, load_overrides(overrides), strict, reference)
         if target.suffix.lower() != f".{fmt}":
@@ -39,12 +40,25 @@ def run(profile: str, source: Path, output: Path | None = None,
             result.add("WARNING", "PROVISIONAL_SOURCE_SCHEMA",
                        "Manual lacks precise input layout; profile assumes declared staging columns. "
                        "Confirm mappings against an actual source file.")
+        import hashlib
+        source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
         book = read_book(source)
+        if hashlib.sha256(source.read_bytes()).hexdigest() != source_hash:
+            raise ValueError("Source changed while being read; retry with a stable export")
+        refresh = ctx.overrides.get("source_evidence")
         if spec.get("external_refresh"):
-            result.add("WARNING", "EXTERNAL_REFRESH_NOT_PERFORMED",
+            if refresh and refresh["sha256"].lower() == source_hash:
+                result.add("INFO", "EXTERNAL_REFRESH_ATTESTED",
+                           "Source owner attests refreshed export; Python did not refresh it")
+            elif refresh:
+                result.add("ERROR", "SOURCE_EVIDENCE_MISMATCH", "Refresh evidence does not match source bytes")
+            else:
+                result.add("ERROR", "EXTERNAL_REFRESH_NOT_PERFORMED",
                        "Excel linked/Power Query data is NOT refreshed by this program; "
                        "supply an already refreshed export")
-        if spec.get("processor") == "reno":
+        if spec.get("processor") == "jz" and spec.get("source_mode") == "raw_cells":
+            prepared = prepare_raw_jz(book.sheets, ctx, result)
+        elif spec.get("processor") == "reno":
             selected, index, dates = choose_reno_sheet(book.sheets, ctx)
             result.source_sheet = selected.name
             result.rows_in = max(0, len(selected.rows) - index - 1)
@@ -58,6 +72,9 @@ def run(profile: str, source: Path, output: Path | None = None,
         result.rows_out = len(prepared.rows)
         result.columns_out = prepared.columns
         result.diagnostics = prepared.diagnostics
+        result.diagnostics["source_sha256"] = source_hash
+        if spec.get("external_refresh"):
+            result.diagnostics["refresh_evidence"] = refresh if refresh and refresh["sha256"].lower() == source_hash else None
         if not prepared.rows:
             result.add("ERROR", "EMPTY_OUTPUT", "No usable rows in prepared output")
         if reference and prepared.columns:
@@ -100,16 +117,15 @@ def _validate_reference(prepared: Prepared, expected: list[str], report: RunRepo
         report.add("ERROR", "DESTINATION_COLUMNS_MISSING", f"Template requires {missing}")
     if unexpected:
         report.add("ERROR", "DESTINATION_COLUMNS_EXTRA", f"Not expected by template: {unexpected}")
-    if not missing and not unexpected:
-        if prepared.columns != expected:
-            report.add("INFO", "DESTINATION_COLUMN_ORDER", "Reordered output to reference template")
-            prepared.columns = expected
+    if not missing and not unexpected and prepared.columns != expected:
+        report.add("INFO", "DESTINATION_COLUMN_ORDER", "Reordered output to reference template")
+        prepared.columns = expected
 
 
 def format_report(r: RunReport) -> str:
     lines = [f"[{r.status}] {r.profile} | source: {r.input_path}",
-             f"Sheet: {r.source_sheet or '?'} | rows: {r.rows_in} -> {r.rows_out} | "
-             f"errors: {r.errors} | warnings: {r.warnings}"]
+             (f"Sheet: {r.source_sheet or '?'} | rows: {r.rows_in} -> {r.rows_out} | "
+              f"errors: {r.errors} | warnings: {r.warnings}")]
     if r.output_path:
         lines.append(f"Output: {r.output_path}")
     for issue in r.issues[:30]:

@@ -17,13 +17,13 @@ Populate Paid Hours Template with five category rows. Direct Hours (Starline)→
 
 ## Current Python implementation (code-derived)
 
-`jz` processor supports **only normalized staging** with unique `Category`, `Paid Hours`, `OT Hours`; `--week-ending` Saturday required; maps all 5 groups to fixed segment/plant/profit center fields; flags missing/unknown/duplicate groups and provisional source schema warning.
+**Updated 2026-11-26:** Bundled `source_mode: staging` retains the normalized Category/Paid Hours/OT Hours route and provisional warning. A custom `source_mode: raw_cells` can extract an explicitly approved `raw_source` sheet, week-ending cell and five category label/paid/OT cell triples. All mapped addresses must be distinct, labels must match, and the source week must equal the requested Saturday. Raw extraction records source-cell provenance and mapping approval, then applies the existing five-category plant/profit-center mapping. No raw HC locations or Paid/OT split are shipped or guessed.
 
-**Output:** `xlsx`; configured sheet `JZ`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-Original HC source cell locations and invoice hours versus Paid/OT split are **not defined** in manual. Current normalized input is **not direct raw workbook support**. Do not assume invoice hours equal paid hours or infer overtime. `--strict` blocks provisional warning until signed off.
+Actual HC positions and Paid/OT derivation remain blocked under TD-003. raw_cells is a configurable extraction capability, not certification of the original workbook. Supply a reviewed contract; normalized staging remains the default. Screenshot week inconsistencies must be resolved against the real source.
 
 ## Operator command
 
@@ -32,6 +32,10 @@ uv run factoryprep prepare --profile jz --input SOURCE.xlsx --week-ending 2026-0
 ```
 
 Inspect `jz_quality.json` for `issues`, `status`, row counts and `diagnostics`; **do not** use stale output from a failed run. `--strict` treats all warnings as blocking.
+
+## Automated regression evidence
+
+The [test matrix](../quality/TEST_STRATEGY.md) maps shared file/config guards, per-field failures and profile operations to executable synthetic tests. Malformed supported config structures fail before source parsing; CSV delimiter fallback and damaged Excel-container handling are shared input guards. 2026-11-26 corrections are covered by `tests/test_manual_corrections.py`; these are synthetic fixtures. Real-source certification remains open.
 
 ## Certification test (not yet evidenced)
 

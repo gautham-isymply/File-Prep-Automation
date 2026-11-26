@@ -2,6 +2,7 @@ id: ccb
 description: CCB hours - numeric Reg/OT/Total, remove Notes, flag the specific documented adjustment
 processor: tabular
 skip_summary_rows: true
+reconciliation_date_column: Row Labels
 columns:
   required: [Row Labels, Dept, Sum of Reg Hr, Sum of OT1.5 Hr, Sum of OT2 Hr, Sum of Total Hr]
   aliases:
@@ -25,5 +26,11 @@ cross_field_sums:
 reconciliation:
   - name: ccb_selected_cost_centers_reg
     column: Sum of Reg Hr
+    filters: [{column: Dept, in: ['3600161001','3600161002','3600161003','3600161004','3600161005','3600171000','3600171003','3600171004','3600171005']}]
+  - name: ccb_selected_cost_centers_ot1
+    column: Sum of OT1.5 Hr
+    filters: [{column: Dept, in: ['3600161001','3600161002','3600161003','3600161004','3600161005','3600171000','3600171003','3600171004','3600171005']}]
+  - name: ccb_selected_cost_centers_ot2
+    column: Sum of OT2 Hr
     filters: [{column: Dept, in: ['3600161001','3600161002','3600161003','3600161004','3600161005','3600171000','3600171003','3600171004','3600171005']}]
 output: {format: xlsx, sheet: CCB}

@@ -17,13 +17,13 @@ For every Sunday–Saturday date, sum hours from the employee timecards and tran
 
 ## Current Python implementation (code-derived)
 
-`reno` processor locates 7 date headers in first 15 rows, requires Saturday week ending (optionally `--week-ending`), sums per-day employee numeric cells, flags negative and >24h/day, optionally compares employee Total; outputs exactly 7 rows with specified constants and `OT Hours` = 0.
+**Updated 2026-11-26:** The mirrored `timecard` contract declares DMY text dates, decimal-comma text and `blank_hours: error`; native numeric/date cells are preserved. The processor aligns actual dates with Sunday–Saturday, requires every date and observations for every day, and blocks unresolved blanks/statuses instead of fabricating hours. Explicit owner-approved `blank_hours: zero` or `zero_tokens` in a custom profile are audited by row/column. Multiple date-header candidates block. Employee rows require a label; summary/header rows are audited. Employee Total is compared only when source and selected periods agree. Output remains seven template rows with OT zero under the illustrated contract.
 
-**Output:** `xlsx`; configured sheet `Reno`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-Week/row selection assumptions, agency and employee subtotals must be tested with real timecard. Manual example totals are not a general fixed rule; never hardcode them. Source may contain merged cells or multiple candidate sheets.
+Real source Saturday–Friday versus template Sunday–Saturday coverage remains unresolved. Obtain the actual missing Saturday; never shift dates. Status meanings and blank-day semantics need owner approval. No real-source certification is claimed (TD-018). A malformed source blocks output even when some daily sums are calculable.
 
 ## Operator command
 

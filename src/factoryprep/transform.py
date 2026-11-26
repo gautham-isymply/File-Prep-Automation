@@ -1,15 +1,16 @@
 """Pure, reusable parsing and validation helpers (no per-plant logic)."""
 from __future__ import annotations
 
+import math
+import re
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from difflib import get_close_matches
 from typing import Any
-import re
 
 from openpyxl.utils.datetime import from_excel
-from .models import CellValue, RunReport
 
+from .models import CellValue, RunReport
 
 HEADER_NORMALIZER = re.compile(r"[^a-z0-9]+")
 
@@ -62,11 +63,14 @@ def parse_date(value: Any, mode: str = "auto") -> date:
     raise ValueError(f"invalid date {s!r} for {mode} convention")
 
 
-def parse_number(value: Any) -> float:
+def parse_number(value: Any, decimal_separator: str = ".") -> float:
     if isinstance(value, bool):
-        raise ValueError("boolean is not a numeric hour")
+        raise TypeError("boolean is not a numeric hour")
     if isinstance(value, (int, float, Decimal)):
-        return float(value)
+        result = float(value)
+        if not math.isfinite(result):
+            raise ValueError("number must be finite")
+        return result
     if value is None or str(value).strip() == "":
         raise ValueError("blank number")
     raw = str(value).strip()
@@ -81,17 +85,29 @@ def parse_number(value: Any) -> float:
         return parts[0] + parts[1] / 60 + (parts[2] / 3600 if len(parts) > 2 else 0)
     if raw.startswith("(") and raw.endswith(")"):
         raw = "-" + raw[1:-1]
-    raw = raw.replace(",", "").replace("$", "").replace("£", "").replace("€", "")
+    raw = raw.replace("$", "").replace("£", "").replace("€", "")
+    if decimal_separator == ",":
+        if not re.fullmatch(r"[+-]?\d+(?:,\d+)?", raw):
+            raise ValueError("expected decimal-comma number without grouping")
+        raw = raw.replace(",", ".")
+    elif "," in raw:
+        if not re.fullmatch(r"[+-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?", raw):
+            raise ValueError("ambiguous comma: declare decimal-comma encoding in profile")
+        raw = raw.replace(",", "")
     try:
-        return float(Decimal(raw))
+        result = float(Decimal(raw))
+        if not math.isfinite(result):
+            raise ValueError("number must be finite")
+        return result
     except InvalidOperation as exc:
         raise ValueError(f"not a numeric value: {value!r}") from exc
 
 
-def excel_hours(cell: CellValue, report: RunReport, row: int, column: str) -> float:
+def excel_hours(cell: CellValue, report: RunReport, row: int, column: str,
+                encoding: str = "cell_format") -> float:
     """Convert Excel serial-time durations ×24, already decimal-hour values unchanged.
 
-    Ambiguous numeric 0 < x < 1 warns: assume Excel serial time (manual requirement).
+    Ambiguous unformatted fractions block; explicit units override cell formatting.
     The format check handles text HH:MM and datetime.time as durations.
     """
     value = cell.value
@@ -103,13 +119,18 @@ def excel_hours(cell: CellValue, report: RunReport, row: int, column: str) -> fl
     if isinstance(value, str) and ":" in value:
         return parse_number(value)
     num = parse_number(value)
+    if encoding == "decimal_hours":
+        return num
+    if encoding == "excel_days":
+        return round(num * 24, 8)
     format_hint = cell.excel_format.lower()
     time_formatted = any(code in format_hint for code in ("h:", "[h]", "hh", "mm:ss"))
     if 0 < abs(num) < 1:
         if not time_formatted:
-            report.add("WARNING", "AMBIGUOUS_TIME_FRACTION",
-                       f"Treating {num} as Excel fractional day (×24); verify source encoding",
+            report.add("ERROR", "AMBIGUOUS_TIME_FRACTION",
+                       "Declare decimal_hours or excel_days for unformatted fractions",
                        row, column)
+            raise ValueError("ambiguous hours encoding")
         return round(num * 24, 8)
     if time_formatted and abs(num) >= 1:
         # Durations >24h are possible in [h]:mm Excel format.

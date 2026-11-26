@@ -17,21 +17,25 @@ Filter highlighted row by colour and change one `Sum of Reg Hr` cell from 65.8 t
 
 ## Current Python implementation (code-derived)
 
-Requires Row Labels/Dept/four hours; aliases `CC` to Dept; numeric + nonnegative conversions; date MDY; drop `Notes`; warning when any remaining 65.8 appears; row-keyed `--overrides` can change exactly one preverified value. Warn on Reg+OT1.5+OT2 vs Total mismatch; cost-center metric is advisory.
+**Updated 2026-11-26:** Four hours fields are numeric; Notes is removed. A reviewed override must match one row and the expected old value; replacement values are parsed and checked for invalid/negative values before use. The program never globally replaces 65.8 or silently recalculates Total. Summary markers are tested only in the first mapped column, with optional explicit table configuration and audit. Requested-week diagnostics now include separate Reg, OT1.5 and OT2 totals for the documented CC list; combine the two OT values for source reconciliation.
 
-**Output:** `xlsx`; configured sheet `CCB`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-The manual does **not** specify a reliable key for the one corrected cell. Never globally change `65.8`. `Dept`≡`CC` is only a profile alias, not confirmed source truth. CCB ADSO selective deletion is out of scope.
+The documented correction still lacks an approved unique key (TD-005); Dept/CC identity remains provisional. Remaining 65.8 and arithmetic mismatches warn; strict mode blocks warnings. No SAP deletion or destination certification is performed.
 
 ## Operator command
 
 ```bash
-uv run factoryprep prepare --profile ccb --input SOURCE.xlsx --output ccb_prepared.xlsx --report ccb_quality.json
+uv run factoryprep prepare --profile ccb --input SOURCE.xlsx --week-ending 2026-03-14 --output ccb_prepared.xlsx --report ccb_quality.json
 ```
 
 Inspect `ccb_quality.json` for `issues`, `status`, row counts and `diagnostics`; **do not** use stale output from a failed run. `--strict` treats all warnings as blocking.
+
+## Automated regression evidence
+
+The [test matrix](../quality/TEST_STRATEGY.md) maps shared file/config guards, per-field failures and profile operations to executable synthetic tests. Malformed supported config structures fail before source parsing; CSV delimiter fallback and damaged Excel-container handling are shared input guards. 2026-11-26 corrections are covered by `tests/test_manual_corrections.py`; these are synthetic fixtures. Real-source certification remains open.
 
 ## Certification test (not yet evidenced)
 

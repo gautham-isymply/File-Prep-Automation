@@ -1,6 +1,7 @@
 id: jz
 description: JZ-BUS/DAT - five profit centers from normalized group, paid and overtime columns
 processor: jz
+source_mode: staging
 source_schema_status: provisional
 columns:
   required: [Category, Paid Hours, OT Hours]

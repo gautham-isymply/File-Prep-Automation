@@ -16,9 +16,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "ruff>=0.8"]
+build = ["pyinstaller>=6.11,<7"]
 
 [project.scripts]
-factoryprep = "factoryprep.cli:app"
+factoryprep = "factoryprep.launcher:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/factoryprep"]

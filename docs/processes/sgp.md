@@ -17,21 +17,25 @@ Change `DATE` display to `YYYYMMDD`; remove `SCHEDULED START TIME` and `SCHEDULE
 
 ## Current Python implementation (code-derived)
 
-`tabular` requires `DATE`, `NORM`, `OT`; normalizes known aliases, parses DATE as YMD, writes real Excel date with `yyyymmdd` number format, removes scheduled time columns, parses NORM/OT as numeric, forbids negatives. `DAYFORCEUC1` filters only advisory totals, never deletes rows.
+**Updated 2026-11-26:** Requires DATE/NORM/OT, parses configured YMD dates and retains real Excel date cells displayed as `yyyymmdd`; removes only the two scheduled-time columns. Numeric hours reject negatives, nonfinite values and ambiguous decimal-comma text. With `--week-ending`, DAYFORCEUC1 reconciliation covers Sunday through Saturday. Without a week, weekly metrics are omitted with a warning; rows are retained. Reports include source hash, date range and a row-removal ledger.
 
-**Output:** `xlsx`; configured sheet `SGP`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-The exact destination schema and whether the consumer expects textual `YYYYMMDD` or formatted Excel date cells are unverified. Optional `DAYFORCEUC1` may be absent, producing reconciliation warning.
+Real source/target cell types and complete schema remain unverified. Diagnostic filters never trim source rows. Header references check names/order only.
 
 ## Operator command
 
 ```bash
-uv run factoryprep prepare --profile sgp --input SOURCE.xlsx --output sgp_prepared.xlsx --report sgp_quality.json
+uv run factoryprep prepare --profile sgp --input SOURCE.xlsx --week-ending 2026-03-14 --output sgp_prepared.xlsx --report sgp_quality.json
 ```
 
 Inspect `sgp_quality.json` for `issues`, `status`, row counts and `diagnostics`; **do not** use stale output from a failed run. `--strict` treats all warnings as blocking.
+
+## Automated regression evidence
+
+The [test matrix](../quality/TEST_STRATEGY.md) maps shared file/config guards, per-field failures and profile operations to executable synthetic tests. Malformed supported config structures fail before source parsing; CSV delimiter fallback and damaged Excel-container handling are shared input guards. 2026-11-26 corrections are covered by `tests/test_manual_corrections.py`; these are synthetic fixtures. Real-source certification remains open.
 
 ## Certification test (not yet evidenced)
 

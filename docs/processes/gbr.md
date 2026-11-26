@@ -17,21 +17,25 @@ Convert `DATEIN` and `DATEOUT` using DMY source convention, display `YYYYMMDD`; 
 
 ## Current Python implementation (code-derived)
 
-Requires five columns, parses DMY dates and sets date display `yyyymmdd`; `time_to_hours` uses Excel format/fraction and emits `AMBIGUOUS_TIME_FRACTION` or `LARGE_HOURS_VALUE` warnings; negative values blocked. Leave-code/department filters compute diagnostics only.
+**Updated 2026-11-26:** DATEIN/DATEOUT use DMY and `yyyymmdd` display. Each time field has `hours_encoding`: `cell_format` (default), `excel_days`, or `decimal_hours`. Cell-format mode converts explicit Excel/clock durations; unformatted fractions block with `AMBIGUOUS_TIME_FRACTION` rather than assuming ×24. Declare reviewed units in a custom profile for such values. Weekly department/leave-code diagnostic totals require `--week-ending`; no leave-code rows are removed.
 
-**Output:** `xlsx`; configured sheet `GBR`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-Time fraction vs already-decimal-hour representation can be ambiguous; `0.5` may mean half an hour or twelve hours. Source and target encoding must be confirmed; current `parse_number` accepts dash as zero. Manual does not enumerate a full destination schema.
+Raw duration versus already-decimal units remain unverified (TD-004). Never apply excel_days to a prepared decimal-hours export. Explicit unit choices are trusted profile contracts; native duration cells and clock text still carry their duration meaning. Destination schema remains uncertified.
 
 ## Operator command
 
 ```bash
-uv run factoryprep prepare --profile gbr --input SOURCE.xlsx --output gbr_prepared.xlsx --report gbr_quality.json
+uv run factoryprep prepare --profile gbr --input SOURCE.xlsx --week-ending 2026-03-14 --output gbr_prepared.xlsx --report gbr_quality.json
 ```
 
 Inspect `gbr_quality.json` for `issues`, `status`, row counts and `diagnostics`; **do not** use stale output from a failed run. `--strict` treats all warnings as blocking.
+
+## Automated regression evidence
+
+The [test matrix](../quality/TEST_STRATEGY.md) maps shared file/config guards, per-field failures and profile operations to executable synthetic tests. Malformed supported config structures fail before source parsing; CSV delimiter fallback and damaged Excel-container handling are shared input guards. 2026-11-26 corrections are covered by `tests/test_manual_corrections.py`; these are synthetic fixtures. Real-source certification remains open.
 
 ## Certification test (not yet evidenced)
 

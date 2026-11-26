@@ -9,7 +9,7 @@ This project was derived from the user-provided *FactoryInsights_MANUAL_LOAD_Pro
 
 ## Quick start
 
-Install [uv](https://docs.astral.sh/uv/) if it is not installed. `uv sync` resolves dependencies against your package registry (internet or a configured company mirror is needed). A `uv.lock` is not bundled because the isolated build environment had no access to PyPI; generate it in your own environment with `uv lock` and commit it to your repository for reproducible deployment.
+Install [uv](https://docs.astral.sh/uv/) if it is not installed. `uv sync` installs dependencies from the tracked `uv.lock` (internet or a configured company mirror is needed on first installation).
 
 ```bash
 # From the unzipped project root:
@@ -43,6 +43,8 @@ uv run pytest -q
 
 For each run, a `*_quality.json` report is generated next to the expected output, **even when preparation fails**. Output is only written when there are no ERRORs. `--strict` also blocks WARNINGs. Exit status `2` represents a validation/preparation failure.
 
+Weekly diagnostics require `--week-ending`; monthly source rows remain in the candidate. Dayforce requires hash-bound refresh evidence using `--overrides`. Reno rejects unresolved blank/status cells and missing dates. See [correction contracts](docs/OPERATIONS.md#manual-correction-contracts-2026-11-26) and [implementation plan](docs/exec-plans/active/EP-0007-manual-parsing-corrections.md).
+
 ## Workflow inventory
 
 | `--profile` | Input file described in manual | Output preparation | Manual pages |
@@ -72,6 +74,7 @@ factoryprep prepare --profile ID|auto --input FILE [--output FILE]
                     [--strict] [--report JSON_FILE] [--config-dir PATH]
 factoryprep validate (same flags as prepare; never writes the prepared file)
 factoryprep batch --manifest jobs.yaml [--strict]
+factoryprep reconcile --group us|cbg --component A.json --component B.json --output combined.json
 ```
 
 Automatic profile selection (`--profile auto`) is conservative: it matches required headers and refuses ambiguous Dayforce variants unless the filename distinguishes them. Supply `--profile` explicitly whenever a workbook has multiple applicable source tabs. The output filename extension must match the profile (`.csv` for Taiwan, `.xlsx` for the other profiles). CSV uses UTF-8 with BOM for Excel compatibility. Source `xls` files must first be exported to `xlsx` because `openpyxl` does not read legacy `.xls`. Excel formulas, macros, OData/PowerQuery connections, and linked source refreshes are **never executed** by this CLI.
@@ -114,12 +117,12 @@ Default profiles are embedded inside `src/factoryprep/profiles/` so installed/wh
 ## Source assumptions requiring real-file confirmation
 
 1. **Exact SAP load schema.** Most workflows' complete output columns are not listed in the manual; the program preserves source column order except for known removals. The CCB profile treats `Dept` and the manual's `CC` as aliases for reconciliation; confirm this equivalence against a real file. Actual target headers, column order, workbook sheet names, and representations of dates must be verified with a template and `--reference`.
-2. **GBR hours encoding.** The manual says to multiply Excel time fractions by 24. The CLI converts Excel serial fractions and clock times, but passes already-decimal numeric hours through; ambiguous fractions are reported. Confirm representative samples before production.
+2. **GBR hours encoding.** The manual says to multiply Excel time fractions by 24. The CLI converts Excel serial fractions and clock times, but passes already-decimal numeric hours through; unformatted ambiguous fractions block output until reviewed units are declared via hours_encoding. Confirm representative samples before production.
 3. **CCB manual adjustment.** Manual's `65.8 → 75.8` example does not provide a robust unique business key; reviewed per-row overrides are mandatory for changing it.
-4. **JZ source structure.** The manual shows the *target* mapping and mentions **Invoice Hours in `HC`** but does not provide a machine-readable raw source layout or paid-vs-OT extraction rules. The `jz` profile expects a **normalized source sheet with `Category`, `Paid Hours`, `OT Hours`**; it emits a provisional-schema warning. The program does not infer or invent the HC paid/OT split. An actual JZ file is needed before direct-raw-source parsing is production-ready. This is the one workflow where upstream staging must currently be supplied instead of feeding the original arbitrary workbook directly.
-5. **Dayforce automatic refresh.** Opening the original files in Excel refreshes external data according to the manual. This program cannot trigger that refresh; feed it already-refreshed exports. Every Dayforce run reports this limitation.
+4. **JZ source structure.** The manual shows the *target* mapping and mentions **Invoice Hours in `HC`** but does not provide a machine-readable raw source layout or paid-vs-OT extraction rules. The `jz` profile expects a **normalized source sheet with `Category`, `Paid Hours`, `OT Hours`**; it emits a provisional-schema warning. The program does not infer or invent the HC paid/OT split. An actual JZ file is needed before direct-raw-source parsing is production-ready. Default staging remains supported; a reviewed custom raw_cells contract can map exact source cells, labels and source week without inventing the HC split. No actual HC mapping is supplied.
+5. **Dayforce automatic refresh.** Opening the original files in Excel refreshes external data according to the manual. This program cannot trigger that refresh; feed it already-refreshed exports. Every Dayforce preparation requires a source-owner attestation tied to the saved export hash; Python does not prove that attestation is true. See the operations runbook for source_evidence YAML.
 6. **Week calendar discrepancy.** The manual's introduction specifies **Sunday–Saturday**, while some later SQL examples use a Monday/Sunday range. The tool adopts the stated Sunday–Saturday convention; verify SAP validation windows separately (out of scope).
-7. **CBG ambiguous date instructions.** The Core2/SSI screenshots and text do not fully enumerate the original headers, and the SSI wizard's YMD selection conflicts with the shown US-style display. The profile uses MDY parsing and `m/d/yyyy` output, which must be validated with a genuine SSI workbook.
+7. **CBG ambiguous date instructions.** The Core2/SSI screenshots and text do not fully enumerate the original headers, and the SSI wizard's YMD selection conflicts with the shown US-style display. The profile uses conservative auto parsing and `m/d/yyyy` output: ambiguous slash dates block until a reviewed custom profile declares the locale.
 8. **Taiwan destination.** Original example is CSV and prechecks describe *correct dates* without an explicit target date string format. Output uses CSV `MM/DD/YYYY`, configurable via the profile, pending actual destination specification.
 
 ## Safety boundaries
@@ -129,3 +132,13 @@ Default profiles are embedded inside `src/factoryprep/profiles/` so installed/wh
 - Does not manufacture missing source rows, dates, daily hours or overtime values unless the manual expressly instructs a template with zero OT (Reno).
 - Includes the requested weekly source preparation only; no BW stage deletion, DTPs, ADSOs, emails or PBI.
 - A failed run will not remove a previously generated output; the JSON report warns if an old output remains, so operators must use the report/status, not just file existence.
+
+## Windows executable
+
+Build on Windows with `.\scripts\build_exe.ps1` (Python 3.11+ and uv required).
+Distribute `dist\factoryprep.exe`; the receiving PC needs no Python installation.
+Run `factoryprep.exe --help` for CLI commands, or drag one or more source files
+onto the EXE in Explorer. Each drop creates a fresh results folder beside its
+source, using conservative profile detection. See the
+[Windows runbook](docs/OPERATIONS.md#windows-executable-and-drag-and-drop) for options,
+output locations and ambiguous-input handling.

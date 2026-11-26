@@ -5,9 +5,11 @@ import csv
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+from zipfile import BadZipFile
 
 from openpyxl import Workbook, load_workbook
-from .models import CellValue, Prepared, SourceBook, RawSheet
+
+from .models import CellValue, Prepared, RawSheet, SourceBook
 
 
 class SourceError(ValueError):
@@ -20,7 +22,10 @@ def read_book(path: Path) -> SourceBook:
     extension = path.suffix.lower()
     if extension in {".xlsx", ".xlsm"}:
         # Cached formula values only. No Excel refresh, macros or external links execution.
-        workbook = load_workbook(path, data_only=True, read_only=True, keep_links=False)
+        try:
+            workbook = load_workbook(path, data_only=True, read_only=True, keep_links=False)
+        except BadZipFile as exc:
+            raise SourceError(f"Invalid or damaged Excel workbook: {path}") from exc
         sheets: list[RawSheet] = []
         try:
             for sh in workbook.worksheets:
@@ -38,7 +43,13 @@ def read_book(path: Path) -> SourceBook:
                 dialect = csv.Sniffer().sniff(sample, delimiters=",;\t|")
                 delimiter = dialect.delimiter
             except csv.Error:
-                delimiter = "\t" if extension == ".tsv" else ","
+                # Quoted delimiters can confuse Sniffer's multi-row frequency
+                # heuristic. Retry the header before assuming comma/tab.
+                header = next((line for line in sample.splitlines() if line.strip()), "")
+                try:
+                    delimiter = csv.Sniffer().sniff(header, delimiters=",;\t|").delimiter
+                except csv.Error:
+                    delimiter = "\t" if extension == ".tsv" else ","
             rows = [[CellValue(v, "General", "s") for v in row]
                     for row in csv.reader(f, delimiter=delimiter)]
         return SourceBook(path, [RawSheet("CSV", rows)])

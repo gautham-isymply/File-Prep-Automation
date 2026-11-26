@@ -14,17 +14,32 @@
 | `columns.numeric` / `negative_forbidden` | parse floats; block negatives for specified columns |
 | `columns.non_null` / `duplicate_keys` | optional strict nulls / duplicate-key WARN |
 | `dates` | list of `{column, input: DMY|MDY|YMD|auto, excel_format, split_delimiter?}` |
-| `time_to_hours` | Excel fraction-of-day ×24 for selected columns, with ambiguity warnings |
-| `header_scan_rows`, `skip_summary_rows` | detection budget; generic total-row detection |
+| `time_to_hours`, `hours_encoding` | Per-column `cell_format`, `excel_days` or `decimal_hours`; unformatted fractional values block in cell_format mode |
+| `header_scan_rows`, `skip_summary_rows`, `table` | Detection budget; summary labels in first mapped column by default, or declared summary_columns; explicit first_data_row/last_data_row and summary_labels; row-removal audit |
 | `exclude_rows` | *actual source row exclusion*, with optional expected label safeguard |
-| `reconciliation` | `{name, column, filters}` diagnostics; `in`, `not_in`, `contains_any` supported by current metric implementation |
+| `reconciliation` | `{name, column, filters}` diagnostics; `in`, `not_in`, `contains_any`, exact `cost_center_in` (code > label pairs); selected nonnumeric cells error rather than disappear |
+| `reconciliation_date_column` | Requested-week diagnostic date predicate; requires --week-ending for metrics; never trims output rows |
+| `reconciliation_contract_confirmed` | False for incomplete Core filters; blocks combined reconciliation; setting true requires owner-reviewed filters/schema |
+| `columns.numeric_if_present` | Validate optional metric fields when present; not a required header |
 | `manual_review`, `cross_field_sums`, `date_continuity_column` | warning/anomaly checks |
-| `external_refresh` | warning when linked data must have been refreshed outside Python |
+| `external_refresh` | Requires hash-bound source_evidence attestation in overrides; absent/mismatched evidence blocks; no automatic refresh |
 | `source_schema_status: provisional` | risk warning for incomplete raw-source specification |
 | `output.format`, `output.sheet`, `output.columns`, `output.date_format` | output destination; explicit fixed columns are used by `reno` and `jz` processors |
 | `defaults`, `category_mapping` | processor-specific Reno/JZ fields |
+| `timecard` | Reno date_input, decimal_separator, blank_hours (error/zero), zero_tokens; default DMY/comma/error/no status coercion |
+| `source_mode`, `raw_source` | JZ staging default; raw_cells requires sheet, approval, week_ending_cell, explicit date_input and categories with distinct label_cell/paid_cell/ot_cell addresses |
 
-**Caution:** This is an implementation description, **not** a published formal schema. Profile keys that are accepted by YAML but unused by a given processor will not automatically fail. No JSON Schema or Pydantic model currently enforces the entire contract ([TD-002](../exec-plans/tech-debt-tracker.md)).
+**Structural guard (2026-11-25):** malformed YAML, invalid nested mappings/lists,
+non-string column names, invalid date modes, nonpositive header scan budgets,
+non-boolean flags, malformed rule/filter structures, negative/nonfinite sum
+tolerances, and incomplete JZ mapping structures raise `ConfigError` before source
+parsing. Correction files require a profile, target column, nonempty match mapping,
+expected old value and new value. See [config failure tests](../../tests/test_config_failures.py).
+
+**Remaining limits:** this is not a complete semantic schema. Unknown extension keys
+remain accepted; alias conflicts, missing transform columns and actual correction
+matches are checked during preparation. Processor-specific column relationships and
+destination type contracts remain unverified ([TD-002](../exec-plans/tech-debt-tracker.md)).
 
 ## Example: SGP mapping
 
@@ -45,3 +60,5 @@ This is illustrative; the *entire* actual profile includes aliases, negative-hou
 ## Compatibility and rule precedence
 
 Explicit profile > `auto` when ambiguity exists. `--sheet` overrides sheet selection. Row-removal rules apply only through `exclude_rows`, not `reconciliation`. `--reference` can re-order output headers if and only if its column set matches; no type checks. Reviewed YAML correction files use `corrections` items with `{profile, match, column, expected_old, new_value}`; a correction must match exactly one row and old value.
+
+**2026-11-26 correction contracts:** replacements are revalidated for numeric/date/nonnegative/non_null constraints. Comma decimals require an explicit local numeric convention; ordinary numeric parsing permits properly grouped thousands but rejects ambiguous `8,75` and nonfinite values. Dayforce exclusion uses exact cost_center_code plus expect_label; bare code or wrong label blocks. Source hashes and external attestations are audit evidence, not source-owner certification. See [operations](../OPERATIONS.md) for configuration examples and [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) for unresolved contracts.

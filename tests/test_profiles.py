@@ -1,11 +1,9 @@
-from datetime import date, datetime, time
-import csv
-import json
+from datetime import date
 
-from openpyxl import load_workbook, Workbook
 import pytest
+from openpyxl import load_workbook
 
-from factoryprep.config import available_profiles, load_profile
+from factoryprep.config import available_profiles
 from factoryprep.engine import run
 from factoryprep.transform import parse_date
 
@@ -30,7 +28,7 @@ def test_sgp_removes_scheduled_fields_and_reformats_dates(workbook_factory, tmp_
         'SCHEDULED START TIME', 'SCHEDULED END TIME'],
         [['1000', 20260504, 8, 1, '08:00', '17:00']])
     target = tmp_path / 'sgp_clean.xlsx'
-    result = run('sgp', src, target)
+    result = run('sgp', src, target, week_ending=date(2026, 5, 9))
     assert result.status == 'PREPARED', result.as_dict()
     rows = output_rows(target)
     assert rows[0] == ('DAYFORCEUC1','DATE','NORM','OT')
@@ -43,7 +41,14 @@ def test_gbr_converts_time_fractions_but_preserves_decimal_hours(workbook_factor
         [['02/03/2026','02/03/2026',0.5,0.125,0,'1000','WORK'],
          ['03/03/2026','03/03/2026',6,0,0,'1000','PTO']])
     target = tmp_path / 'gbr_clean.xlsx'
-    report = run('gbr', src, target)
+    wb = load_workbook(src)
+    for row in (2, 3):
+        if row == 2:
+            for col in (3, 4, 5):
+                wb.active.cell(row, col).number_format = '[h]:mm'
+    wb.save(src)
+    wb.close()
+    report = run('gbr', src, target, week_ending=date(2026, 3, 7))
     assert report.status == 'PREPARED', report.as_dict()
     rows = output_rows(target)
     assert rows[1][2:5] == (12,3,0)
@@ -116,26 +121,26 @@ def test_jz_maps_five_category_rows(workbook_factory,tmp_path):
     assert any(i.code == 'PROVISIONAL_SOURCE_SCHEMA' for i in r.issues)
 
 
-def test_dayforce_ccb_excludes_receiving_cost_center(workbook_factory,tmp_path):
+def test_dayforce_ccb_excludes_receiving_cost_center(workbook_factory,tmp_path,refresh_evidence):
     header = ['Cost_Center','Pay_Date','Location','Pay_Category','Normal']
     src = workbook_factory('dayforce',header,[
         ['3600172100 > Receiving Farmingdale','03/02/2026','DPC CCB','Reg',11],
         ['1000 > Direct Labor','03/02/2026','DPC CCB','Reg',8]])
     path = tmp_path/'df.xlsx'
-    r = run('dayforce_ccb',src,path)
+    r = run('dayforce_ccb',src,path,week_ending=date(2026,3,7),overrides=refresh_evidence(src))
     assert r.status == 'PREPARED', r.as_dict()
     assert r.rows_out == 1
     assert r.diagnostics['excluded_rows'] == 1
     assert r.diagnostics['filtered_reconciliation_metrics']['us_ccb_reg_hours']['total'] == 8
 
 
-def test_dayforce_non_ccb_keeps_all_rows_and_filters_metrics_only(workbook_factory,tmp_path):
+def test_dayforce_non_ccb_keeps_all_rows_and_filters_metrics_only(workbook_factory,tmp_path,refresh_evidence):
     header = ['Cost_Center','Pay_Date','Location','Pay_Category','Normal']
     src = workbook_factory('nonccb',header,[
         ['1025 > Plugs','03/02/2026','DPC BUS','Reg',5],
         ['1025 > Plugs','03/02/2026','OTHER','Reg',100]])
     path=tmp_path/'nonccb_prepared.xlsx'
-    r=run('dayforce_non_ccb',src,path)
+    r=run('dayforce_non_ccb',src,path,week_ending=date(2026,3,7),overrides=refresh_evidence(src))
     assert r.status == 'PREPARED', r.as_dict()
     assert r.rows_out == 2
     assert r.diagnostics['filtered_reconciliation_metrics']['us_non_ccb_reg_hours']['total'] == 5
@@ -179,7 +184,7 @@ def test_date_ambiguity_blocks_without_convention():
 
 
 def test_auto_detect_sgp_and_dayforce_tie_requires_hint(workbook_factory, tmp_path):
-    from factoryprep.detect import detect_profile, DetectionError
+    from factoryprep.detect import DetectionError, detect_profile
     sgp = workbook_factory('sgp_auto', ['DATE', 'NORM', 'OT'], [[20260504, 8, 1]])
     assert detect_profile(sgp) == 'sgp'
     source = workbook_factory('labor_export',
@@ -229,7 +234,7 @@ def test_reviewed_ccb_correction_uses_exact_keys(workbook_factory, tmp_path):
     assert not any(i.code == 'TOTAL_MISMATCH' for i in r.issues)
     assert output_rows(target)[1][3] == 75.8
     strict_target = tmp_path/'strict_corrected.xlsx'
-    strict_result = run('ccb', source, strict_target, overrides=yaml_file, strict=True)
+    strict_result = run('ccb', source, strict_target, overrides=yaml_file, strict=True, week_ending=date(2026,1,10))
     assert strict_result.status == 'PREPARED', strict_result.as_dict()
 
 

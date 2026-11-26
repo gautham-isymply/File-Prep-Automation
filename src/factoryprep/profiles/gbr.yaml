@@ -14,6 +14,8 @@ dates:
   - {column: DATEIN, input: DMY, excel_format: yyyymmdd}
   - {column: DATEOUT, input: DMY, excel_format: yyyymmdd}
 time_to_hours: [REGHOURS, O1HOURS, O2HOURS]
+hours_encoding: {REGHOURS: cell_format, O1HOURS: cell_format, O2HOURS: cell_format}
+reconciliation_date_column: DATEIN
 reconciliation:
   - name: paid_hours_filtered
     column: REGHOURS

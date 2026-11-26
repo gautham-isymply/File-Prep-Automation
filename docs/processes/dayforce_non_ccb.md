@@ -17,21 +17,25 @@ For source validation, filter Cost_Center labels: `1000 > Direct Labour`, `1000 
 
 ## Current Python implementation (code-derived)
 
-Require Cost_Center/Pay_Date/Location/Pay_Category/Normal; parse MDY Pay_Date, numeric nonnegative Normal; no row exclusions. Advisory `us_non_ccb_reg_hours` / `us_non_ccb_ot_hours` metrics use `contains_any` matches and location/category constraints. External refresh warning on every run.
+**Updated 2026-11-26:** Requires the same source-bound refreshed-export attestation as Dayforce CCB. Retains all monthly rows. Requested-week diagnostic totals use exact documented code > label pairs, DPC BUS/DPC PAC and Reg/OT 1.5 categories. No substring code matches. Without --week-ending, weekly metrics are omitted with a warning. `reconcile --group us` combines matching-week successful CCB/non-CCB reports only when both include refresh evidence.
 
-**Output:** `xlsx`; configured sheet `Dayforce_Non_CCB`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-Manual cost-center labels may vary; substring matching could include unintended centers. Date window not automatically applied to output; current metrics calculate across source rows, so compare weekly totals only after certified exported window or adding a verified date filter. No actual external refresh.
+Real export freshness and label grammar remain unverified (TD-007/016). Source-owner attestations are auditable prerequisites, not refresh execution. Unknown labels are not silently matched to similar labels. Destination schema remains uncertified.
 
 ## Operator command
 
 ```bash
-uv run factoryprep prepare --profile dayforce_non_ccb --input SOURCE.xlsx --output dayforce_non_ccb_prepared.xlsx --report dayforce_non_ccb_quality.json
+uv run factoryprep prepare --profile dayforce_non_ccb --input SOURCE.xlsx --week-ending 2026-03-14 --overrides REFRESH_EVIDENCE.yaml --output dayforce_non_ccb_prepared.xlsx --report dayforce_non_ccb_quality.json
 ```
 
 Inspect `dayforce_non_ccb_quality.json` for `issues`, `status`, row counts and `diagnostics`; **do not** use stale output from a failed run. `--strict` treats all warnings as blocking.
+
+## Automated regression evidence
+
+The [test matrix](../quality/TEST_STRATEGY.md) maps shared file/config guards, per-field failures and profile operations to executable synthetic tests. Malformed supported config structures fail before source parsing; CSV delimiter fallback and damaged Excel-container handling are shared input guards. 2026-11-26 corrections are covered by `tests/test_manual_corrections.py`; these are synthetic fixtures. Real-source certification remains open.
 
 ## Certification test (not yet evidenced)
 

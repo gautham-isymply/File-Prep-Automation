@@ -17,18 +17,18 @@ Make sure dates are correct, check null or negative values, and detect missing d
 
 ## Current Python implementation (code-derived)
 
-Require four columns; parse MDY Date, numeric nonnegative Earn/Paid/Overtime; check missing calendar dates **between min and max source dates**; write UTF-8-with-BOM CSV, with current date rendering `MM/DD/YYYY` via `m/d/yyyy` format hint. Missing day is WARNING unless `--strict`.
+**Updated 2026-11-26:** Requires Date and the three nonnegative numeric hour measures; rejects nulls, nonfinite numbers and invalid dates. With --week-ending, date continuity covers the entire requested Sunday–Saturday week, including missing first/last dates; otherwise checks observed min/max. Repeated dates warn without deleting rows. Missing dates warn (strict mode blocks); no rows or zero hours are synthesized. CSV serialization remains UTF-8 BOM with current MDY rendering pending the destination contract.
 
-**Output:** `csv`; configured sheet `Taiwan`. If output is an Excel date with a display pattern, the cell is date-typed, not necessarily formatted string data. For real destination header comparison use `--reference` (column names/order only).
+**Output:** `csv`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 
 ## Quality risks, unknowns and safeguards
 
-Manual does not explicitly certify CSV target date representation or full schema. Continuity check does not assert a specific expected week or future missing days; source examples may have gaps due to non-daily production.
+Date locale, CSV schema/precision and expected production calendar remain unverified (TD-008). The explicit week checks calendar days; nonproduction-day exceptions need a reviewed future contract. No SAP/PBI integrations or source-row deduplication are performed.
 
 ## Operator command
 
 ```bash
-uv run factoryprep prepare --profile taiwan --input SOURCE.csv --output taiwan_prepared.csv --report taiwan_quality.json
+uv run factoryprep prepare --profile taiwan --input SOURCE.csv --week-ending 2026-03-14 --output taiwan_prepared.csv --report taiwan_quality.json
 ```
 
 Inspect `taiwan_quality.json` for `issues`, `status`, row counts and `diagnostics`; **do not** use stale output from a failed run. `--strict` treats all warnings as blocking.

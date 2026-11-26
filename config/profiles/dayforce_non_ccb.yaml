@@ -2,6 +2,7 @@ id: dayforce_non_ccb
 description: Dayforce US non-CCB - validate location, cost centers and Reg/OT hour categories
 processor: tabular
 external_refresh: true
+reconciliation_date_column: Pay_Date
 columns:
   required: [Cost_Center, Pay_Date, Location, Pay_Category, Normal]
   aliases:
@@ -18,11 +19,11 @@ reconciliation:
     filters:
       - {column: Pay_Category, in: [Reg]}
       - {column: Location, in: [DPC BUS, DPC PAC]}
-      - {column: Cost_Center, contains_any: ['1000 > Direct Labour','1000 > Straights','1025 > Plugs','1050 > Fittings','1075 > Small Parts Assembly','1300 > Machine Shop','1330 > Powdercoat']}
+      - {column: Cost_Center, cost_center_in: ['1000 > Direct Labour','1000 > Straights','1025 > Plugs','1050 > Fittings','1075 > Small Parts Assembly','1300 > Machine Shop','1330 > Powdercoat']}
   - name: us_non_ccb_ot_hours
     column: Normal
     filters:
       - {column: Pay_Category, in: ['OT 1.5']}
       - {column: Location, in: [DPC BUS, DPC PAC]}
-      - {column: Cost_Center, contains_any: ['1000 > Direct Labour','1000 > Straights','1025 > Plugs','1050 > Fittings','1075 > Small Parts Assembly','1300 > Machine Shop','1330 > Powdercoat']}
+      - {column: Cost_Center, cost_center_in: ['1000 > Direct Labour','1000 > Straights','1025 > Plugs','1050 > Fittings','1075 > Small Parts Assembly','1300 > Machine Shop','1330 > Powdercoat']}
 output: {format: xlsx, sheet: Dayforce_Non_CCB}

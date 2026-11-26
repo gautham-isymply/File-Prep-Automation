@@ -8,9 +8,46 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from ..models import Context, Prepared, RawSheet, RunReport
-from ..transform import norm
+from ..models import CellValue, Context, Prepared, RawSheet, RunReport
+from ..transform import norm, parse_date
 from .tabular import prepare_tabular
+
+
+def prepare_raw_jz(sheets: list[RawSheet], ctx: Context, report: RunReport) -> Prepared:
+    """Extract only explicitly reviewed cell mappings; never infer the HC split."""
+    from openpyxl.utils.cell import coordinate_to_tuple
+
+    spec = ctx.profile["raw_source"]
+    options = [s for s in sheets if s.name == spec["sheet"]]
+    if len(options) != 1 or (ctx.sheet_override and ctx.sheet_override != spec["sheet"]):
+        raise ValueError("Raw JZ requires the exact configured source sheet")
+    sheet = options[0]
+    report.source_sheet = sheet.name
+
+    def cell(address):
+        row, col = coordinate_to_tuple(address)
+        if row > len(sheet.rows) or col > len(sheet.rows[row - 1]):
+            raise ValueError(f"Raw JZ mapped cell {address} is missing")
+        item = sheet.rows[row - 1][col - 1]
+        if item.excel_type == "e":
+            raise ValueError(f"Raw JZ mapped cell {address} contains an Excel error")
+        return item
+
+    actual_week = parse_date(cell(spec["week_ending_cell"]).value, spec["date_input"])
+    if actual_week != ctx.week_ending:
+        raise ValueError("Raw JZ source week does not match --week-ending")
+    rows = [[CellValue(v) for v in ("Category", "Paid Hours", "OT Hours")]]
+    provenance = []
+    for category, mapping in spec["categories"].items():
+        if norm(cell(mapping["label_cell"]).value) != norm(category):
+            raise ValueError(f"Raw JZ category label mismatch at {mapping['label_cell']}")
+        rows.append([CellValue(category), cell(mapping["paid_cell"]), cell(mapping["ot_cell"])])
+        provenance.append({"category": category, "sheet": sheet.name, **mapping})
+    report.rows_in = len(rows) - 1
+    prepared = prepare_jz(RawSheet(sheet.name, rows), 0, ctx, report)
+    prepared.diagnostics["raw_cell_provenance"] = provenance
+    prepared.diagnostics["mapping_approval"] = spec["approval"]
+    return prepared
 
 
 def prepare_jz(sheet: RawSheet, header_index: int, ctx: Context,

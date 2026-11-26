@@ -1,5 +1,7 @@
 # Original manual evidence map / ambiguity register
 
+**2026-11-26 direct-source review:** [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) records the supplied DOCX hash, reproducible XML paragraph pointers, all ten workflow corrections and newly inspected screenshot discrepancies. Reno source shows DMY/decimal-comma/status cells and a different date window from its output template; three Core image relationships target missing files. These findings supplement the older page-based summary below; they do not certify raw-source parsing.
+
 **Source:** uploaded `FactoryInsights_MANUAL_LOAD_Process.docx`, 39 pages, heading “Factory Insights Manual Load/Process.” This source is **not included in this public-ready code ZIP** because it may contain internal screenshots/data. Page numbers refer to the user-provided document; process summaries below are compact paraphrases. Do not invent source filenames, business keys or destination columns not visible there.
 
 | Manual pages | Process/rules directly visible | Runbook |
@@ -18,7 +20,7 @@
 
 1. Manual introduction says **Sunday–Saturday**; some later SQL examples instead show dates from Monday through Sunday or other different weeks. CLI follows the introduction. **TD-010**.
 2. GBR original hour cells may mix Excel fraction and decimal numeric data; converting `0.5` to `12` without verified cell format can be ambiguous. **TD-004**.
-3. CBG Starline screenshots show US-style date strings, while text says choose YMD in wizard, then display `m/d/yyyy`. Current config uses MDY. **TD-009**.
+3. CBG Starline screenshots show US-style date strings, while text says choose YMD in wizard, then display `m/d/yyyy`. Current config now uses conservative auto parsing; ambiguous slash dates block until locale is approved. **TD-009**.
 4. CCB correction is one highlighted cell; the manual does not give a unique stable row key for automated matching. **TD-005**.
 5. JZ raw HC column is mentioned but detailed machine-readable source layout and paid/OT decomposition are not shown. Current staged source is a CLI design assumption, **not** manual instruction. **TD-003**.
 6. Dayforce refresh in Excel happens outside the Python CLI; cannot assume fresh data. **TD-007**.

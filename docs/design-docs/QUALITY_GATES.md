@@ -13,7 +13,7 @@ Profile selection → config parsing → source reading → sheet/header detecti
 | INFO | recorded only | recorded only |
 
 Typical ERRORs: `MISSING_COLUMN`, `FORMAT_MISMATCH`, `DUPLICATE_HEADER`, `NEGATIVE_VALUE`, `EXCEL_CELL_ERROR`, `DESTINATION_COLUMNS_EXTRA`, `OVERRIDE_MATCH_FAILURE`.
-Typical WARNINGs: `MISSING_DATES`, `AMBIGUOUS_TIME_FRACTION`, `MANUAL_REVIEW_REQUIRED`, `TOTAL_MISMATCH`, `RECONCILIATION_COLUMNS_MISSING`, `EXTERNAL_REFRESH_NOT_PERFORMED`, `PROVISIONAL_SOURCE_SCHEMA`.
+Typical WARNINGs: `MISSING_DATES`, `MANUAL_REVIEW_REQUIRED`, `TOTAL_MISMATCH`, `RECONCILIATION_COLUMNS_MISSING`, `PROVISIONAL_SOURCE_SCHEMA`.
 
 The report includes first-class `issues` and generic `diagnostics.filtered_reconciliation_metrics` for tabular processors. It does **not** currently compare source totals to a live BW system. Source-level reconciliation metrics can be absent with a WARNING if source fields are missing.
 
@@ -25,3 +25,5 @@ The report includes first-class `issues` and generic `diagnostics.filtered_recon
 - Source row number in `Issue.row` is an Excel-sheet row for tabular inputs, not always a stable record key.
 
 See [report contract](../quality/REPORT_CONTRACT.md), [operations](../OPERATIONS.md), and [reliability limitations](../RELIABILITY.md).
+
+2026-11-26: ambiguous unformatted duration fractions and missing/mismatched Dayforce source evidence are ERRORs. Reconciliation period/filter warnings omit or qualify diagnostics; they never delete ordinary source rows. See the [report contract](../quality/REPORT_CONTRACT.md).
