@@ -61,10 +61,10 @@ BAD_FIELDS = [
         {"column": "CC", "equals": "1000"}]}]),
 ]
 BAD_FIELDS += [(f"columns.{key}", "NORM") for key in (
-    "required", "drop", "expected", "numeric", "negative_forbidden", "non_null", "duplicate_keys"
+    "required", "drop", "expected", "numeric", "negative_forbidden", "non_null", "duplicate_keys", "allow_blank"
 )]
 BAD_FIELDS += [(f"columns.{key}", [None]) for key in (
-    "required", "drop", "expected", "numeric", "negative_forbidden", "non_null", "duplicate_keys"
+    "required", "drop", "expected", "numeric", "negative_forbidden", "non_null", "duplicate_keys", "allow_blank"
 )]
 BAD_FIELDS += [("reconciliation", [{"name": "sum", "column": "NORM", "filters": [
     {"column": "CC", key: "1000"}]}]) for key in ("in", "not_in", "contains_any")]

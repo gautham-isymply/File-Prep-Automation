@@ -11,6 +11,7 @@ columns:
     OT: [Overtime]
   drop: [SCHEDULED START TIME, SCHEDULED END TIME]
   numeric: [NORM, OT]
+  allow_blank: [NORM, OT]
   negative_forbidden: [NORM, OT]
 dates:
   - {column: DATE, input: YMD, excel_format: yyyymmdd}

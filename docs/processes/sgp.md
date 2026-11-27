@@ -17,7 +17,7 @@ Change `DATE` display to `YYYYMMDD`; remove `SCHEDULED START TIME` and `SCHEDULE
 
 ## Current Python implementation (code-derived)
 
-**Updated 2026-11-26:** Requires DATE/NORM/OT, parses configured YMD dates and retains real Excel date cells displayed as `yyyymmdd`; removes only the two scheduled-time columns. Numeric hours reject negatives, nonfinite values and ambiguous decimal-comma text. With `--week-ending`, DAYFORCEUC1 reconciliation covers Sunday through Saturday. Without a week, weekly metrics are omitted with a warning; rows are retained. Reports include source hash, date range and a row-removal ledger.
+**Updated 2026-11-26:** Requires DATE/NORM/OT, parses configured YMD dates and retains real Excel date cells displayed as `yyyymmdd`; removes only the two scheduled-time columns. Numeric hours reject negatives, nonfinite values and ambiguous decimal-comma text, while `allow_blank: [NORM, OT]` allows blank attendance cells on off/unworked days. With `--week-ending`, DAYFORCEUC1 reconciliation covers Sunday through Saturday. Without a week, weekly metrics are omitted with a warning; rows are retained. Reports include source hash, date range and a row-removal ledger.
 
 **Output:** `xlsx`; source files are read-only. `--reference` validates destination column names/order only. See [EP-0007](../exec-plans/active/EP-0007-manual-parsing-corrections.md) and [profile contract](../design-docs/PROFILE_CONTRACT.md).
 

@@ -119,3 +119,12 @@ Logs are append-only summaries of work performed locally. **Not** actual plant f
 - With workspace-local UV_CACHE_DIR: `uv run --offline pytest -q` — **540 passed in 21.27s**; `uv run --offline ruff check src tests` — **PASS**.
 - Re-ran user CCB command (same explicit sheet/week/source/output/report, offline): exit 0. Compared original versus regenerated output values: all 2676 data rows identical; source SHA256 unchanged. All four hours columns use 0.00; 11 RGB fills retained; filter A1:H2677. Verification script initially compared openpyxl StyleProxy objects directly; copied fill equality passed on follow-up. Metadata inspection, no Excel UI verification or destination certification. Raw files remain local/untracked.
 - `uv run --offline python scripts/check_docs.py` — **PASS**, 57 Markdown files / 10 mirrored profiles. `git diff --check` — **PASS** (line-ending notices only).
+
+## 2026-11-26 — SGP attendance blank hours support
+
+- User experienced 314 `NULL_VALUE` errors on real SGP attendance source (`Attendance 9 - 15 Nov 2026.xlsx`) where off-days/unworked normal and overtime hours were blank.
+- Added `columns.allow_blank` support in `config.py` schema validation and `tabular.py` null check.
+- Added `allow_blank: [NORM, OT]` to both `config/profiles/sgp.yaml` and embedded `src/factoryprep/profiles/sgp.yaml`.
+- Added `test_sgp_allows_blank_norm_and_ot` in `tests/test_profiles.py` and updated `tests/test_validation_matrix.py` and `tests/test_config_failures.py`.
+- Updated `docs/processes/sgp.md`, `docs/design-docs/PROFILE_CONTRACT.md`.
+- Ran `scripts/check_docs.py`: **PASS** (57 docs, 10 profiles, mirror check verified).

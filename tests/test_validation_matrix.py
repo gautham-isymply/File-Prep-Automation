@@ -143,6 +143,8 @@ def test_every_numeric_field_blocks_invalid_values(
     profile, column, value, issue, workbook_factory, tmp_path,
 ):
     spec = load_profile(profile)
+    if value is None and column in spec["columns"].get("allow_blank", []):
+        pytest.skip(f"{column} permits blank values in profile {profile}")
     rows = source_rows(spec)
     rows[0][spec["columns"]["required"].index(column)] = value
     # Keep a null in a data row distinguishable from a completely blank row.

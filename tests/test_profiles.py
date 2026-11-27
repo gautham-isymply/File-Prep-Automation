@@ -36,6 +36,23 @@ def test_sgp_removes_scheduled_fields_and_reformats_dates(workbook_factory, tmp_
     assert result.diagnostics['filtered_reconciliation_metrics']['paid_hours_selected_dayforceuc1']['total'] == 8
 
 
+def test_sgp_allows_blank_norm_and_ot(workbook_factory, tmp_path):
+    src = workbook_factory('sgp', ['DAYFORCEUC1','DATE','NORM','OT',
+        'SCHEDULED START TIME', 'SCHEDULED END TIME'],
+        [['1000', 20260504, None, None, '08:00', '17:00'],
+         ['1000', 20260505, 8, None, '08:00', '17:00']])
+    target = tmp_path / 'sgp_clean.xlsx'
+    result = run('sgp', src, target, week_ending=date(2026, 5, 9))
+    assert result.status == 'PREPARED', result.as_dict()
+    rows = output_rows(target)
+    assert rows[0] == ('DAYFORCEUC1','DATE','NORM','OT')
+    assert rows[1][2] is None
+    assert rows[1][3] is None
+    assert rows[2][2] == 8
+    assert rows[2][3] is None
+    assert result.diagnostics['filtered_reconciliation_metrics']['paid_hours_selected_dayforceuc1']['total'] == 8
+
+
 def test_gbr_converts_time_fractions_but_preserves_decimal_hours(workbook_factory, tmp_path):
     src = workbook_factory('gbr', ['DATEIN','DATEOUT','REGHOURS','O1HOURS','O2HOURS','DEPARTMENT','JOBCODEDESC'],
         [['02/03/2026','02/03/2026',0.5,0.125,0,'1000','WORK'],

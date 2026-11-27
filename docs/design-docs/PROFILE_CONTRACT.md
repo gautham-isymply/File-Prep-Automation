@@ -12,6 +12,7 @@
 | `columns.drop` | columns removed from prepared output, if present |
 | `columns.expected` | optional complete schema; extra columns WARN, missing ERROR |
 | `columns.numeric` / `negative_forbidden` | parse floats; block negatives for specified columns |
+| `columns.allow_blank` | optional list of numeric/hours columns permitted to have blank/empty cells on unworked/off days |
 | `columns.non_null` / `duplicate_keys` | optional strict nulls / duplicate-key WARN |
 | `dates` | list of `{column, input: DMY|MDY|YMD|auto, excel_format, split_delimiter?}` |
 | `time_to_hours`, `hours_encoding` | Per-column `cell_format`, `excel_days` or `decimal_hours`; unformatted fractional values block in cell_format mode |

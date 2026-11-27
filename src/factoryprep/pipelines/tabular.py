@@ -144,6 +144,7 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
     numeric.update(set(cfg.get("numeric_if_present", [])) & set(columns))
     hours = set(profile.get("time_to_hours", []))
     strict_null = set(cfg.get("non_null", []))
+    allow_blank = set(cfg.get("allow_blank", []))
     no_negative = set(cfg.get("negative_forbidden", []))
     if len(columns) != len(set(columns)):
         report.add("ERROR", "DUPLICATE_OUTPUT_COLUMN", "Output has nonunique column names")
@@ -223,7 +224,7 @@ def prepare_tabular(sheet: RawSheet, header_index: int, ctx: Context, report: Ru
                 record[name] = val
                 continue
             if is_blank(val):
-                if name in strict_null or name in dates or name in hours or name in numeric:
+                if (name in strict_null or name in dates or name in hours or name in numeric) and name not in allow_blank:
                     report.add("ERROR", "NULL_VALUE", "Required numeric/date value is blank", row_index, name)
                 record[name] = None
                 continue

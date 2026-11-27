@@ -50,7 +50,7 @@ def _validate_structure(data: dict, location: str) -> None:
     """Validate consumed structures; unknown extension keys remain compatible."""
     columns = _mapping(data.get("columns", {}), f"{location}.columns")
     for key in ("required", "drop", "expected", "numeric", "negative_forbidden",
-                "non_null", "duplicate_keys"):
+                "non_null", "duplicate_keys", "allow_blank"):
         if key in columns:
             _strings(columns[key], f"{location}.columns.{key}")
     aliases = _mapping(columns.get("aliases", {}), f"{location}.columns.aliases")
